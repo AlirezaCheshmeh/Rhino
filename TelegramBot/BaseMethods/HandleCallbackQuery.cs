@@ -37,7 +37,7 @@ namespace TelegramBot.BaseMethods
         public async Task HandleCallbackQueryAsync(ITelegramBotClient client, CallbackQuery callbackQuery, UserSession session)
         {
             MenuConfigs menu = new(client);
-            TransactionTelegramConfigs transactionMenu = new(client);
+            TransactionConfigs transactionMenu = new(client);
             try
             {
                 var userIdKey = callbackQuery.From.Id;
@@ -71,7 +71,7 @@ namespace TelegramBot.BaseMethods
 
                         break;
                     case CommandState.GetLastTransaction:
-                        using (ApplicationDataContext context = new())
+                        await using (ApplicationDataContext context = new())
                         {
                             var data = await context.Set<Transaction>().Where(z => z.TelegramId == callbackQuery.From.Id).OrderByDescending(z => z.CreatedAt).FirstOrDefaultAsync();
                             await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, $"مقدار هزینه: {data.Amount} \n تاریخ ثبت: {DateExtension.ConvertToPersianDate(data.CreatedAt.ToString("yyy/MM/dd"))} \n  توضیحات: {data.Description}");
