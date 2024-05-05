@@ -34,7 +34,7 @@ namespace TelegramBot.BaseMethods
         public async Task HandleMessageAsync(ITelegramBotClient client, Message message, UserSession session)
         {
             MenuConfigs Menu = new(client);
-            TransactionTelegramConfigs transactionMenu = new(client);
+            TransactionConfigs transactionMenu = new(client);
             try
             {
                 Console.WriteLine($"GetCache Succed state:{session.CommnadState} User:{message.From.FirstName + " " + message.From.LastName}");
@@ -74,7 +74,7 @@ namespace TelegramBot.BaseMethods
 
                             var cacheData = await _disCache.GetStringAsync($"{userIdKey}-bankID");
                             _ = long.TryParse(cacheData, out var resOfId);
-                            //if (resOfId == 0 ) todo : validtion for if not parse to long, please handle.
+                            //if (resOfId == 0 ) todo : validation for if not parse to long, please handle.
 
 
                             var amount = Convert.ToDecimal(message.Text);
