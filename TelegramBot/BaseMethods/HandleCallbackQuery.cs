@@ -93,7 +93,7 @@ namespace TelegramBot.BaseMethods
                             await CacheExtension.UpdateCacheAsync(_disCache, $"{userIdKey}-bankID", bankId);
                             session.CommnadState = CommandState.Amount;
                             await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                            await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "هزینه را وارد کنید");
+                            await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "هزینه را وارد کنید💸 \n برای مثال 120000");
                         }
                         catch (Exception ex)
                         {

@@ -27,8 +27,8 @@ namespace TelegramBot.Configurations
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("روزانه", "InsertDailyTransaction"),
-                    InlineKeyboardButton.WithCallbackData("تاریخ مشخص", "InsertWithDateTransaction"),
+                    InlineKeyboardButton.WithCallbackData("☀️ روزانه", "InsertDailyTransaction"),
+                    InlineKeyboardButton.WithCallbackData("🗓 تاریخ مشخص", "InsertWithDateTransaction"),
                 },
             });
 
@@ -41,19 +41,34 @@ namespace TelegramBot.Configurations
 
         public async Task SendChooseBankAsync(long chatId, long telegramId)
         {
-            // var inlineKeyboards = new InlineKeyboardMarkup()
+   
             using ApplicationDataContext context = new();
-            var banks = await context.Set<Bank>().Where(z => z.TelegramId == telegramId).ToListAsync();
-            var batchInlineKeyboardButtons = new List<InlineKeyboardButton>();
 
+            var banks = await context.Set<Bank>()
+                .Where(z => z.TelegramId == telegramId)
+                .ToListAsync();
+            var inlineKeyboardRows = new List<InlineKeyboardButton[]>();
+            var currentRow = new List<InlineKeyboardButton>();
             foreach (var bank in banks)
-                batchInlineKeyboardButtons.Add(InlineKeyboardButton.WithCallbackData(bank.Name, $"bank-{bank.Id}"));
+            {
+                var button = InlineKeyboardButton.WithCallbackData(bank.Name, $"bank-{bank.Id}");
+                currentRow.Add(button);
 
-            var inlineKeyboards = new InlineKeyboardMarkup(new[] { batchInlineKeyboardButtons });
+                if (currentRow.Count == 4)
+                {
+                    inlineKeyboardRows.Add(currentRow.ToArray());
+                    currentRow.Clear();
+                }
+            }
+            if (currentRow.Count > 0)
+            {
+                inlineKeyboardRows.Add(currentRow.ToArray());
+            }
+            var inlineKeyboards = new InlineKeyboardMarkup(inlineKeyboardRows);
             await _client.SendTextMessageAsync(
-          chatId: chatId,
-          text: $"نوع تراکنش خود را انتخاب کنید",
-          replyMarkup: inlineKeyboards);
+                chatId: chatId,
+                text: "نوع تراکنش خود را انتخاب کنید",
+                replyMarkup: inlineKeyboards);
         }
     }
 
