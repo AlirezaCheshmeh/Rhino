@@ -17,33 +17,33 @@ namespace TelegramBot.Configurations
                         {
                             new[]
                             {
-                                 InlineKeyboardButton.WithCallbackData("ایجاد پرداختی جدید", "InsertTransactionInbound"),
+                                 InlineKeyboardButton.WithCallbackData("🆕 ایجاد پرداختی جدید", "InsertTransactionInbound"),
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("ایجاد دریافتی جدید", "InsertTransactionOutbound"),
+                                InlineKeyboardButton.WithCallbackData("🗞 ایجاد دریافتی جدید", "InsertTransactionOutbound"),
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("📅یادآوری رویداد تکی ", "ReminderOnce"),
-                                InlineKeyboardButton.WithCallbackData("📅 یادآوری رویداد دوره ای", "ReminderPeriodic"),
+                                InlineKeyboardButton.WithCallbackData("🔔 یادآوری رویداد تکی ", "ReminderOnce"),
+                                InlineKeyboardButton.WithCallbackData("🗓 یادآوری رویداد دوره ای", "ReminderPeriodic"),
 
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("تنظیمات", "Settings"),
-                                InlineKeyboardButton.WithCallbackData("ماشین حساب", "Calculator"),
+                                InlineKeyboardButton.WithCallbackData("⚙ تنظیمات", "Settings"),
+                                InlineKeyboardButton.WithCallbackData("🧮 ماشین حساب", "Calculator"),
 
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("راهنما", "Guide"),
-                                InlineKeyboardButton.WithCallbackData("پشتیبانی", "Supporter"),
+                                InlineKeyboardButton.WithCallbackData("⁉️ راهنما", "Guide"),
+                                InlineKeyboardButton.WithCallbackData("💬 پشتیبانی", "Supporter"),
 
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("خرید اشتراک", "BuyAccount"),
+                                InlineKeyboardButton.WithCallbackData("💳 خرید اشتراک", "BuyAccount"),
                             }
                         });
             await _client.SendTextMessageAsync(

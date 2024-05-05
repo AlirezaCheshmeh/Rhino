@@ -40,6 +40,9 @@ namespace TelegramBot.BaseMethods
                 Console.WriteLine($"GetCache Succed state:{session.CommnadState} User:{message.From.FirstName + " " + message.From.LastName}");
                 Console.WriteLine($"message recieved from {message.Chat.FirstName + message.Chat.LastName} Message:{message.Text}");
                 var userIdKey = message.From.Id;
+
+
+
                 var command = new string[] { "/menu", "/start" };
                 if (command.Contains(message.Text))
                 {
@@ -48,6 +51,11 @@ namespace TelegramBot.BaseMethods
                     session.CommnadState = CommandState.Init;
                     await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
                 }
+
+                //about us
+                if (message.Text == "/aboutus")
+                    await client.SendTextMessageAsync(message.Chat.Id, "برنامه Rhino یک برنامه کوچک حسابداری در تلگرام است که به کاربران امکان مدیریت هزینه‌ها و درآمدهای خود را به‌صورت ساده و سریع می‌دهد. این برنامه به‌عنوان یک بات تلگرام، به کاربران اجازه می‌دهد که با استفاده از دستورات متنی، هزینه‌ها و درآمدهای خود را وارد کنند و گزارش‌های مالی خود را بررسی کنند.");
+
                 switch (session.CommnadState)
                 {
 
@@ -59,7 +67,7 @@ namespace TelegramBot.BaseMethods
                     case CommandState.Amount:
                         if (!(IsInteger(message.Text) && IsDouble(message.Text)))
                         {
-                            await client.SendTextMessageAsync(message.Chat.Id, "قیمت به درستی وارد نشده است");
+                            await client.SendTextMessageAsync(message.Chat.Id, " ⚠️ قیمت به درستی وارد نشده است \n دوباره وارد کنید");
                         }
                         else
                         {
@@ -81,7 +89,7 @@ namespace TelegramBot.BaseMethods
                             };
 
                             await CacheExtension.UpdateCacheAsync(_disCache, $"{userIdKey}-transaction", transaction);
-
+                            
                             session.CommnadState = CommandState.Description;
                             session.LastCommand = "Amount";
                             await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
@@ -113,7 +121,7 @@ namespace TelegramBot.BaseMethods
                          {
                             new[]
                             {
-                                 InlineKeyboardButton.WithCallbackData("ثبت نهایی", "AcceptTransaction"),
+                                 InlineKeyboardButton.WithCallbackData("✔️ ثبت نهایی", "AcceptTransaction"),
                             },
                         });
                         await client.SendTextMessageAsync(

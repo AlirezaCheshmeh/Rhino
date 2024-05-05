@@ -12,6 +12,8 @@ using TelegramBot.BaseMethods;
 using Infrastructure.Database;
 using Application.BackgroundServices;
 using Application.Mediator.User.Command;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using TelegramBot.Configurations.Commands;
 
 
 await using (ApplicationDataContext context = new())
@@ -33,7 +35,6 @@ var serviceCollection = new ServiceCollection()
     .AddStackExchangeRedisCache(options =>
     {
         options.Configuration = "localhost:6379"; // Redis connection string
-                                                  // Add other options if needed
     })
     .BuildServiceProvider();
 
@@ -47,6 +48,7 @@ HandleUpdate handleUpdate = new(cache, disCache);
 HandleError handleError = new();
 
 var client = new TelegramBotClient(handleUpdate.TelegramKey);
+await Comamnd.SetBotCommands(client);
 await client.DeleteWebhookAsync();
 using var cts = new CancellationTokenSource();
 
