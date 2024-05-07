@@ -48,7 +48,7 @@ HandleUpdate handleUpdate = new(cache, disCache);
 HandleError handleError = new();
 
 var client = new TelegramBotClient(handleUpdate.TelegramKey);
-await Comamnd.SetBotCommands(client);
+await TelegramBot.Configurations.Commands.Command.SetBotCommands(client);
 await client.DeleteWebhookAsync();
 using var cts = new CancellationTokenSource();
 

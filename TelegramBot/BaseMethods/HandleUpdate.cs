@@ -13,6 +13,8 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Text.Json;
 using TelegramBot.Configurations.Base;
 using Application.Services.CacheServices;
+using Application.Utility;
+using TelegramBot.ConstVariable;
 
 namespace TelegramBot.BaseMethods
 {
@@ -35,73 +37,71 @@ namespace TelegramBot.BaseMethods
 
             try
             {
-                string userIdKey = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From?.Id.ToString();
-                if (string.IsNullOrEmpty(userIdKey))
+                var commandState = CommandState.Init;
+                var botMessageType = BotMessageType.Text;
+                if (update.CallbackQuery is not null)
                 {
-                    return;
+                    var callBackData = update.CallbackQuery.Data;
+                    if (string.IsNullOrEmpty(callBackData))
+                        return;
+                    commandState = callBackData switch
+                    {
+                        ConstCallBackData.Menu.InboundTransaction => CommandState.InsertInboundTransaction,
+                        ConstCallBackData.Menu.OutboundTransaction => CommandState.InsertOutboundTransaction,
+                        ConstCallBackData.OutboundTransaction.Daily => CommandState.OutboundTransactionDaily,
+                        _ => CommandState.Init
+                    };
+                    botMessageType = BotMessageType.CallbackQuery;
                 }
-                UserSession? cacheData = null;
-
+                else if (update.Message?.Text is not null)
+                {
+                    //todo : handle message like query(CallBackData) above 
+                }
+                var userIdKey = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From?.Id.ToString();
+                if (string.IsNullOrEmpty(userIdKey))
+                    return;
+                UserSession? userSession = null;
                 try
                 {
-                    // Attempt to retrieve data from the cache
                     var data = await _disCache.GetAsync(userIdKey, cancellationToken);
-
-                    // Check if data is null or invalid
-                    if (data != null && data.Length > 0)
+                    if (data is { Length: > 0 })
+                        userSession = JsonSerializer.Deserialize<UserSession>(data);
+                    if (userSession is null)
                     {
-                        // Attempt to deserialize the data to an object of type UserSession
-                        cacheData = JsonSerializer.Deserialize<UserSession>(data);
+                        userSession = new UserSession
+                        {
+                            Type = botMessageType,
+                            CommandState = commandState,
+                            UserId = Convert.ToInt64(userIdKey)
+                        };
+                        var json = JsonSerializer.Serialize(userSession);
+                        var bytes = Encoding.UTF8.GetBytes(json);
+                        await _disCache.SetAsync(userIdKey, bytes, token: cancellationToken);
+                    }
+                    else
+                    {
+                        userSession.CommandState = commandState;
+                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey, userSession);
                     }
                 }
                 catch (JsonException ex)
                 {
                     await Console.Error.WriteLineAsync($"Failed to deserialize data for key '{userIdKey}': {ex.Message}");
                 }
-
-                UserSession? newUserSession = null;
-
-
-                // Handle different update types
-                if (update.Type == UpdateType.Message && update.Message?.Type == MessageType.Text)
+                // why not if else???
+                switch (update)
                 {
-                    if (cacheData == null)
-                    {
-                        newUserSession = new UserSession
-                        {
-                            Type = BotMessageType.Text,
-                            CommnadState = CommandState.Start,
-                            LastCommand = "/Start",
-                            UserId = Convert.ToInt64(userIdKey)
-                        };
-                        var json = JsonSerializer.Serialize(newUserSession);
-                        var bytes = Encoding.UTF8.GetBytes(json);
-                        await _disCache.SetAsync(userIdKey, bytes);
-                    }
-                    await _handleMessage.HandleMessageAsync(client, update.Message, cacheData ?? newUserSession);
-                }
-                else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery != null)
-                {
-                    if (cacheData == null)
-                    {
-                        newUserSession = new UserSession
-                        {
-                            Type = BotMessageType.CallbackQuery,
-                            CommnadState = CommandState.SignAndAccept,
-                            LastCommand = "SignAndAccept",
-                            UserId = Convert.ToInt64(userIdKey)
-                        };
-                        var json = JsonSerializer.Serialize(newUserSession);
-                        var bytes = Encoding.UTF8.GetBytes(json);
-                        await _disCache.SetAsync(userIdKey, bytes);
-
-                    }
-                    await _handleCallbackQuery.HandleCallbackQueryAsync(client, update.CallbackQuery, cacheData ?? newUserSession);
+                    case { Type: UpdateType.Message, Message.Type: MessageType.Text }:
+                        await _handleMessage.HandleMessageAsync(client, update.Message, userSession!);
+                        break;
+                    case { Type: UpdateType.CallbackQuery, CallbackQuery: not null }:
+                        await _handleCallbackQuery.HandleCallbackQueryAsync(client, update.CallbackQuery, userSession!);
+                        break;
                 }
             }
             catch (Exception ex)
             {
-
+                //todo: set sa
                 throw;
             }
 
@@ -113,12 +113,17 @@ namespace TelegramBot.BaseMethods
             public BotMessageType Type { get; set; }
             public long UserId { get; set; }
             public string LastCommand { get; set; } = string.Empty;
-            public CommandState CommnadState { get; set; }
+            public CommandState CommandState { get; set; }
 
         }
 
         public enum CommandState
         {
+            Init,
+            InsertInboundTransaction,
+            InsertOutboundTransaction,
+            OutboundTransactionDaily,
+            OutboundTransactionSpecificDate,
             InsertTransaction,
             SignAndAccept,
             Start,
@@ -129,15 +134,12 @@ namespace TelegramBot.BaseMethods
             Description,
             Category,
             Bank,
-            loginBefore,
+            LoginBefore,
             AcceptTransaction,
             GetLastTransaction,
-            Menu,
-            Init,
-            InsertTransactionInBound,
             InsertDailyInBound,
             InsertWithDateInBound,
-            Choosebank,
+            ChooseBank,
             BankSelect
         }
 

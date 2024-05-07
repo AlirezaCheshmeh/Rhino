@@ -8,19 +8,19 @@ using Telegram.Bot.Types;
 
 namespace TelegramBot.Configurations.Commands
 {
-    public class Comamnd
+    public class Command
     {
         public static async Task SetBotCommands(ITelegramBotClient botClient)
         {
             var commands = new[]
             {
-                 new BotCommand { Command = "/help", Description = "💬 پشتیبانی" },
-                 new BotCommand { Command = "/menu", Description = "🏠 صفحه نخست" },
-                 new BotCommand { Command = "/aboutus", Description = "ℹ️ " },
+                new BotCommand { Command = "/menu", Description = "منو 🏠" },
+                new BotCommand { Command = "/supporter", Description = "پشتیبانی 💬" },
+                new BotCommand { Command = "/intro", Description = "ℹ️" },
              };
 
             // Set bot commands
             await botClient.SetMyCommandsAsync(commands);
         }
-    }   
+    }
 }
