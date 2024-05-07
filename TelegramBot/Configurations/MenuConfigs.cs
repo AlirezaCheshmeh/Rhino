@@ -48,7 +48,7 @@ namespace TelegramBot.Configurations
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("💳 خرید اشتراک", ConstCallBackData.Menu.Supporter),
+                                InlineKeyboardButton.WithCallbackData("💳 خرید اشتراک", ConstCallBackData.Menu.BuyAccount),
                             }
                         });
             await _client.SendTextMessageAsync(
