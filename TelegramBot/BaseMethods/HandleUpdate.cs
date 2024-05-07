@@ -43,7 +43,7 @@ namespace TelegramBot.BaseMethods
                 {
                     var callBackData = update.CallbackQuery.Data;
                     if (string.IsNullOrEmpty(callBackData))
-                        return;
+                        return;//TODO:do not just return send message to user invalid command or try again
                     commandState = callBackData switch
                     {
                         ConstCallBackData.Menu.InboundTransaction => CommandState.InsertInboundTransaction,
@@ -59,7 +59,7 @@ namespace TelegramBot.BaseMethods
                 }
                 var userIdKey = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From?.Id.ToString();
                 if (string.IsNullOrEmpty(userIdKey))
-                    return;
+                    return;//TODO:do not just return send message to user invalid command or try again
                 UserSession? userSession = null;
                 try
                 {
