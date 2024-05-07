@@ -1,159 +1,145 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bot.Types;
-using Telegram.Bot;
+﻿using Application.Services.CacheServices;
+using Application.Utility;
 using Domain.Entities.Transactions;
-using static TelegramBot.BaseMethods.HandleUpdate;
-using Application.Services.CacheServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
-using Application.Utility;
-using Microsoft.AspNetCore.Builder;
-using System.Collections;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using TelegramBot.Configurations;
 using TelegramBot.Configurations.Base;
+using TelegramBot.ConstMessages;
+using static TelegramBot.BaseMethods.HandleUpdate;
 
 namespace TelegramBot.BaseMethods
 {
     public class HandleMessage : BaseConfig
     {
-        private readonly ICacheServices _cahce;
+        private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;
 
-        public HandleMessage(ICacheServices cahce, IDistributedCache disCache)
+        public HandleMessage(ICacheServices cache, IDistributedCache disCache)
         {
-            _cahce = cahce;
+            _cache = cache;
             _disCache = disCache;
         }
 
         public async Task HandleMessageAsync(ITelegramBotClient client, Message message, UserSession session)
         {
-            MenuConfigs Menu = new(client);
+            MenuConfigs menu = new(client);
             TransactionConfigs transactionMenu = new(client);
             try
             {
-                Console.WriteLine($"GetCache Succed state:{session.CommnadState} User:{message.From.FirstName + " " + message.From.LastName}");
-                Console.WriteLine($"message recieved from {message.Chat.FirstName + message.Chat.LastName} Message:{message.Text}");
+                if (message.From is null)
+                    return;
                 var userIdKey = message.From.Id;
-
-
-
-                var command = new string[] { "/menu", "/start" };
+                var command = new[] { "/menu", "/start" };
                 if (command.Contains(message.Text))
                 {
-                    Console.WriteLine("true");
                     await _disCache.RemoveAsync(userIdKey.ToString());
-                    session.CommnadState = CommandState.Init;
+                    session.CommandState = CommandState.Init;
                     await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
                 }
+                else if (message.Text == "/intro")
+                    await client.SendTextMessageAsync(message.Chat.Id, ConstMessage.Introduction);
 
-                //about us
-                if (message.Text == "/aboutus")
-                    await client.SendTextMessageAsync(message.Chat.Id, "برنامه Rhino یک برنامه کوچک حسابداری در تلگرام است که به کاربران امکان مدیریت هزینه‌ها و درآمدهای خود را به‌صورت ساده و سریع می‌دهد. این برنامه به‌عنوان یک بات تلگرام، به کاربران اجازه می‌دهد که با استفاده از دستورات متنی، هزینه‌ها و درآمدهای خود را وارد کنند و گزارش‌های مالی خود را بررسی کنند.");
-
-                switch (session.CommnadState)
+                switch (session.CommandState)
                 {
 
                     case CommandState.Init:
-                        await Menu.SendMenuToUserAsync(message.Chat.Id);
-                        session.CommnadState = CommandState.InsertTransactionInBound;
-                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
+                        await menu.SendMenuToUserAsync(message.Chat.Id);
                         break;
-                    case CommandState.Amount:
-                        if (!(IsInteger(message.Text) && IsDouble(message.Text)))
-                        {
-                            await client.SendTextMessageAsync(message.Chat.Id, " ⚠️ قیمت به درستی وارد نشده است \n دوباره وارد کنید");
-                        }
-                        else
-                        {
 
-                            var cacheData = await _disCache.GetStringAsync($"{userIdKey}-bankID");
-                            _ = long.TryParse(cacheData, out var resOfId);
-                            //if (resOfId == 0 ) todo : validation for if not parse to long, please handle.
+                    //case CommandState.InsertInboundTransaction:
+                    //    await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
+                    //    session.CommandState = CommandState.ChooseBank;
+                    //    await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
+                    //    break;
+
+                    //case CommandState.Amount:
+                    //    if (!(IsInteger(message.Text) && IsDouble(message.Text)))
+                    //    {
+                    //        await client.SendTextMessageAsync(message.Chat.Id, " ⚠️ قیمت به درستی وارد نشده است \n دوباره وارد کنید");
+                    //    }
+                    //    else
+                    //    {
+
+                    //        var cacheData = await _disCache.GetStringAsync($"{userIdKey}-bankID");
+                    //        _ = long.TryParse(cacheData, out var resOfId);
+                    //        //if (resOfId == 0 ) todo : validation for if not parse to long, please handle.
 
 
-                            var amount = Convert.ToDecimal(message.Text);
-                            var transaction = new Transaction
-                            {
-                                Amount = amount,
-                                BankId = resOfId,
-                                CategoryId = 2,
-                                Description = "",
-                                TelegramId = userIdKey,
-                                MessageId = message.MessageId
-                            };
+                    //        var amount = Convert.ToDecimal(message.Text);
+                    //        var transaction = new Transaction
+                    //        {
+                    //            Amount = amount,
+                    //            BankId = resOfId,
+                    //            CategoryId = 2,
+                    //            Description = "",
+                    //            TelegramId = userIdKey,
+                    //            MessageId = message.MessageId
+                    //        };
 
-                            await CacheExtension.UpdateCacheAsync(_disCache, $"{userIdKey}-transaction", transaction);
-                            
-                            session.CommnadState = CommandState.Description;
-                            session.LastCommand = "Amount";
-                            await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                            await client.SendTextMessageAsync(message.Chat.Id, "هزینه با موفقیت ثبت شد✔️ \n توضیحات را وارد کنید📃");
+                    //        await CacheExtension.UpdateCacheAsync(_disCache, $"{userIdKey}-transaction", transaction);
 
-                        }
-                        break;
-                    case CommandState.Description:
+                    //        session.CommandState = CommandState.Description;
+                    //        session.LastCommand = "Amount";
+                    //        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
+                    //        await client.SendTextMessageAsync(message.Chat.Id, "هزینه با موفقیت ثبت شد✔️ \n توضیحات را وارد کنید📃");
 
-                        try
-                        {
+                    //    }
+                    //    break;
+                    //case CommandState.Description:
 
-                            Transaction cacheData = new();
-                            byte[] tranaction = await _disCache.GetAsync($"{userIdKey}-transaction");
+                    //    try
+                    //    {
+                    //        Transaction transactionCache = new();
+                    //        var transaction = await _disCache.GetAsync($"{userIdKey}-transaction");
+                    //        if (transaction is { Length: > 0 })
+                    //        {
+                    //            transactionCache = JsonSerializer.Deserialize<Transaction>(transaction);
+                    //        }
+                    //        transactionCache!.Description = message.Text;
+                    //        await CacheExtension.UpdateCacheAsync(_disCache, $"{userIdKey}-transaction", transactionCache);
+                    //    }
+                    //    catch (JsonException ex)
+                    //    {
+                    //        await Console.Error.WriteLineAsync($"Failed to deserialize data for key '{userIdKey}': {ex.Message}");
+                    //    }
 
-                            if (tranaction != null && tranaction.Length > 0)
-                            {
-                                cacheData = JsonSerializer.Deserialize<Transaction>(tranaction);
-                            }
-                            cacheData!.Description = message.Text;
-                            await CacheExtension.UpdateCacheAsync(_disCache, $"{userIdKey}-transaction", cacheData);
-                        }
-                        catch (JsonException ex)
-                        {
-                            Console.Error.WriteLine($"Failed to deserialize data for key '{userIdKey}': {ex.Message}");
-                        }
+                    //    var inlineKeyboardDescription = new InlineKeyboardMarkup(new[]
+                    //     {
+                    //        new[]
+                    //        {
+                    //             InlineKeyboardButton.WithCallbackData("✔️ ثبت نهایی", "AcceptTransaction"),
+                    //        },
+                    //    });
+                    //    await client.SendTextMessageAsync(
+                    //   chatId: message.Chat.Id,
+                    //   text: "برای ثبت نهایی روی دکمه زیر بزنید \n توضیحات با موفقیت ثبت شد✔️ ",
+                    //   replyMarkup: inlineKeyboardDescription);
 
-                        var inlineKeyboardDescription = new InlineKeyboardMarkup(new[]
-                         {
-                            new[]
-                            {
-                                 InlineKeyboardButton.WithCallbackData("✔️ ثبت نهایی", "AcceptTransaction"),
-                            },
-                        });
-                        await client.SendTextMessageAsync(
-                       chatId: message.Chat.Id,
-                       text: "برای ثبت نهایی روی دکمه زیر بزنید \n توضیحات با موفقیت ثبت شد✔️ ",
-                       replyMarkup: inlineKeyboardDescription);
+                    //    session.CommandState = CommandState.AcceptTransaction;
+                    //    await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
 
-                        session.CommnadState = CommandState.AcceptTransaction;
-                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
+                    //    break;
+                    //case CommandState.InsertDailyInBound:
+                    //    await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
 
-                        break;
-                    case CommandState.InsertTransactionInBound:
-                        await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
-                        session.CommnadState = CommandState.Choosebank;
-                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                        break;
-                    case CommandState.InsertDailyInBound:
-                        await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
+                    //    break;
+                    //case CommandState.ChooseBank:
+                    //    await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
 
-                        break;
-                    case CommandState.Choosebank:
-                        await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
+                    //    break;
+                    //case CommandState.InsertWithDateInBound:
+                    //    session.CommandState = CommandState.ChooseBank;
+                    //    await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
+                    //    await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
 
-                        break;
-                    case CommandState.InsertWithDateInBound:
-                        session.CommnadState = CommandState.Choosebank;
-                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                        await transactionMenu.SendInBoundTransactionAsync(message.Chat.Id);
-
-                        break;
-                    default:
-                        break;
+                    //    break;
+                    //default:
+                    //    break;
                 }
 
 

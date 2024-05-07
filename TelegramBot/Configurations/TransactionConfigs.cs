@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBot.ConstVariable;
 
 namespace TelegramBot.Configurations
 {
@@ -27,8 +28,8 @@ namespace TelegramBot.Configurations
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("روزانه", "InsertDailyTransaction"),
-                    InlineKeyboardButton.WithCallbackData("تاریخ مشخص", "InsertWithDateTransaction"),
+                    InlineKeyboardButton.WithCallbackData("روزانه", ConstCallBackData.OutboundTransaction.Daily),
+                    InlineKeyboardButton.WithCallbackData("تاریخ مشخص", ConstCallBackData.OutboundTransaction.SpecificDate),
                 },
             });
 
