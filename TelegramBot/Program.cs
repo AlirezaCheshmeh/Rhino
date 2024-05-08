@@ -12,13 +12,14 @@ using TelegramBot.BaseMethods;
 using Infrastructure.Database;
 using Application.BackgroundServices;
 using Application.Mediator.User.Command;
+using Domain.Entities.DiscountCodes;
 
 
 await using (ApplicationDataContext context = new())
 {
     context.Database.EnsureCreated();
 }
-
+var code = DiscountCode.GenerateDiscountCode(5);
 var serviceCollection = new ServiceCollection()
     .AddMediatR(c =>
     {

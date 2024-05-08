@@ -18,8 +18,6 @@ namespace Application.Extensions
             //ad settings
             Services.AddSettings(configuration);
 
-            //Add AutoMapper Services
-            Services.AddMapperServcies();
 
             // Add MediatR
             Services.AddMediatR(cfg =>
