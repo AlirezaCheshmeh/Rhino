@@ -11,13 +11,12 @@ namespace Domain.Entities.UserPurchases
         public long PlanId { get; private set; }
         public Plan Plan { get; private set; }
         public long? DisCountCodeId { get; private set; }
-        public DiscountCode Discount { get; private set; }
+        public DiscountCode DiscountCode { get; private set; }
         public decimal? OffPrice { get; private set; }
         public decimal CustomerProfit { get; private set; }
         public decimal PayedPrice { get; private set; }
         public decimal PlanBasePrice { get; private set; }
-        public long UserId { get; private set; }
-        public User User { get; private set; }
+        public long TelegramId { get; private set; }
 
         public void SetValiddate(DateTime date) => ValidDate = date;
         public void SetDiscountCodeId(long codeId) => DisCountCodeId = codeId;
@@ -28,7 +27,7 @@ namespace Domain.Entities.UserPurchases
 
 
         //factory methodes use these methodes like constructor
-        public UserPurchase CreateUserPurchase(DateTime validDate, long userId,
+        public UserPurchase CreateUserPurchase(DateTime validDate, long telegramId,
             long planId, decimal planBasePrice,
             decimal? offPrice, long? disCountId) => new()
             {
@@ -38,9 +37,8 @@ namespace Domain.Entities.UserPurchases
                 DisCountCodeId = disCountId,
                 PlanBasePrice = planBasePrice,
                 PlanId = planId,
-                UserId = userId,
+                TelegramId = telegramId,
                 ValidDate = validDate,
-
             };
 
 

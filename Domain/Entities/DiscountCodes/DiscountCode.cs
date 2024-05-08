@@ -1,10 +1,6 @@
 ﻿using Domain.Entities.BaseEntity;
-using Domain.Entities.Users;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Domain.Entities.Plans;
+using Domain.Entities.UserPurchases;
 
 namespace Domain.Entities.DiscountCodes
 {
@@ -13,6 +9,9 @@ namespace Domain.Entities.DiscountCodes
         public string Code { get; private set; }
         public DateTime ExpireDate { get; private set; }
         public int UseCount { get; private set; }
+        public long PlanId { get; set; }
+        public Plan Plan { get; set; }
+        public ICollection<UserPurchase> UserPurchases { get; set; }
 
         public void MinusUseCount() => UseCount--;
         public bool UseCountValidation() => UseCount > 0;
@@ -24,22 +23,30 @@ namespace Domain.Entities.DiscountCodes
                 throw new ArgumentException("Length cannot be greater than the number of unique characters available.");
             }
 
-            List<char> charPool = new List<char>();
+            List<char> charList = new List<char>();
             for (char c = 'a'; c <= 'z'; c++)
             {
-                charPool.Add(c);
+                charList.Add(c);
             }
 
             Random random = new Random();
-            for (int i = charPool.Count - 1; i > 0; i--)
+            for (int i = charList.Count - 1; i > 0; i--)
             {
                 int j = random.Next(i + 1);
-                char temp = charPool[i];
-                charPool[i] = charPool[j];
-                charPool[j] = temp;
+                char temp = charList[i];
+                charList[i] = charList[j];
+                charList[j] = temp;
             }
-            return new string(charPool.GetRange(0, length).ToArray());
+            return new string(charList.GetRange(0, length).ToArray());
         }
 
+        public static DiscountCode CreateDiscountCode(DateTime expireDate, int useCount, long planId,int? codeLength = null) => new()
+        {
+            //fedault is 5 length
+            Code = GenerateDiscountCode(codeLength.HasValue?codeLength.Value:5),
+            ExpireDate = expireDate,
+            PlanId = planId,
+            UseCount = useCount,
+        };
     }
 }

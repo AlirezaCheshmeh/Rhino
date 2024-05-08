@@ -1,11 +1,9 @@
 ﻿using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions;
 using System.Reflection;
 using Application.Cqrs;
 using Microsoft.Extensions.Configuration;
 using Application.SiteSetting;
-using Application.Extensions.Mapper;
 using Domain.DTOs.Shared;
 using Domain.Entities.BaseEntity;
 
@@ -17,7 +15,6 @@ namespace Application.Extensions
         {
             //ad settings
             Services.AddSettings(configuration);
-
 
             // Add MediatR
             Services.AddMediatR(cfg =>
