@@ -38,7 +38,6 @@ namespace TelegramBot.Configurations
            replyMarkup: inlineKeyboards);
         }
 
-
         public async Task SendChooseBankAsync(long chatId, long telegramId)
         {
             // var inlineKeyboards = new InlineKeyboardMarkup()
@@ -55,6 +54,8 @@ namespace TelegramBot.Configurations
           text: $"نوع تراکنش خود را انتخاب کنید",
           replyMarkup: inlineKeyboards);
         }
+
+       
     }
 
 }

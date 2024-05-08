@@ -93,7 +93,6 @@ namespace TelegramBot.BaseMethods
 
                         try
                         {
-
                             Transaction cacheData = new();
                             byte[] tranaction = await _disCache.GetAsync($"{userIdKey}-transaction");
 
