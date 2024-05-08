@@ -34,6 +34,7 @@ namespace TelegramBot.BaseMethods
         public async Task HandleMessageAsync(ITelegramBotClient client, Message message, UserSession session)
         {
             MenuConfigs Menu = new(client);
+            DateConfigs dateButtons = new(client);
             TransactionTelegramConfigs transactionMenu = new(client);
             try
             {
@@ -43,6 +44,9 @@ namespace TelegramBot.BaseMethods
                 var command = new string[] { "/menu", "/start" };
                 if (command.Contains(message.Text))
                 {
+                    //test date
+                    //await dateButtons.SendMonthOfDate(message.Chat.Id);
+                    //await dateButtons.SendDaysOfDate(message.Chat.Id);
                     Console.WriteLine("true");
                     await _disCache.RemoveAsync(userIdKey.ToString());
                     session.CommnadState = CommandState.Init;
