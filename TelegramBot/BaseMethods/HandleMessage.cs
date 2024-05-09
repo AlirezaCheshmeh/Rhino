@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types.ReplyMarkups;
+﻿using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Types;
 using Telegram.Bot;
 using Domain.Entities.Transactions;
@@ -13,8 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 using Application.Utility;
-using Microsoft.AspNetCore.Builder;
-using System.Collections;
 using TelegramBot.Configurations;
 using TelegramBot.Configurations.Base;
 
