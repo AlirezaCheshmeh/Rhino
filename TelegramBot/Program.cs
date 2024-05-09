@@ -12,16 +12,22 @@ using TelegramBot.BaseMethods;
 using Infrastructure.Database;
 using Application.BackgroundServices;
 using Application.Mediator.User.Command;
-using Application.Utility;
-using SixLabors.ImageSharp.Processing.Processors.Filters;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using TelegramBot.Configurations.Commands;
+using AutoMapper;
+using Application.MapperProfile;
+using Application.Services.TelegramServices;
 
-
+//ensure Database
 await using (ApplicationDataContext context = new())
 {
     context.Database.EnsureCreated();
 }
+
+//mapper
+var config = new MapperConfiguration(cfg =>
+{
+    cfg.AddProfile(new MapperProfile());
+});
+var mapper = config.CreateMapper();
 
 var serviceCollection = new ServiceCollection()
     .AddMediatR(c =>
@@ -29,7 +35,9 @@ var serviceCollection = new ServiceCollection()
         c.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
     })
     .AddTransient<IRequestHandler<CreateUserCommand, ServiceRespnse>, CreateUserCommand.CreateUserCommandHandler>()
+    .AddSingleton(mapper)
     .AddScoped<IUnitOfWork, UnitOfWork>()
+    .AddScoped<IDynamicButtonsServices, DynamicButtonsServices>()
     .AddScoped<ICacheServices, CacheServices>()
     .AddHostedService<ConfigJobSchedule>()
     .AddScoped<IServiceProvider, ServiceProvider>()
@@ -44,9 +52,12 @@ var mediator = serviceCollection.GetRequiredService<IMediator>();
 var serviceProvider = serviceCollection.GetRequiredService<IServiceProvider>();
 var cache = serviceCollection.GetRequiredService<ICacheServices>();
 var disCache = serviceCollection.GetRequiredService<IDistributedCache>();
+var dynamicButtons = serviceCollection.GetRequiredService<IDynamicButtonsServices>();
 
 CacheExtension.Initialize(disCache);
 HandleUpdate handleUpdate = new(cache, disCache);
+
+HandleUpdate handleUpdate = new(cache, disCache,dynamicButtons);
 HandleError handleError = new();
 
 var client = new TelegramBotClient(handleUpdate.TelegramKey);
