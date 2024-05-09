@@ -29,6 +29,7 @@ namespace TelegramBot.BaseMethods
         {
             MenuConfigs menu = new(client);
             TransactionConfigs transactionMenu = new(client);
+            CategoryConfigs catMenu = new(client);
             try
             {
                 if (message.From is null)
@@ -37,6 +38,7 @@ namespace TelegramBot.BaseMethods
                 var command = new[] { "/menu", "/start" };
                 if (command.Contains(message.Text))
                 {
+                    await catMenu.SendCategoriesToUser(message.Chat.Id);
                     await _disCache.RemoveAsync(userIdKey.ToString());
                     session.CommandState = CommandState.Init;
                     await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
