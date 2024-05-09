@@ -22,7 +22,7 @@ namespace Infrastructure.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=.;Database=Rhino;User Id=sa;Password=1;TrustServerCertificate=True; MultipleActiveResultSets=True;");
+            optionsBuilder.UseSqlServer("Server=.;Database=Rhino;Integrated Security =True;TrustServerCertificate=True; MultipleActiveResultSets=True;");
             base.OnConfiguring(optionsBuilder);
         }
 

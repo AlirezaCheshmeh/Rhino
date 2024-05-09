@@ -8,6 +8,8 @@ namespace TelegramBot.Configurations.Base
 {
     public abstract class BaseConfig
     {
-        public string TelegramKey { get; private set; } = "7034758059:AAGRepl9FygWlLTMC3UrlXLquvul3yer2l4";
+        private const string StageBot = "6996481741:AAGtEvzB_ek90PLbezp2p1phyAsUFQLJd7g";
+        private const string Production = "7034758059:AAGRepl9FygWlLTMC3UrlXLquvul3yer2l4";
+        public string TelegramKey { get; private set; } = StageBot;
     }
 }

@@ -1,5 +1,7 @@
 ﻿using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBot.ConstMessages;
 using TelegramBot.ConstVariable;
 
 namespace TelegramBot.Configurations
@@ -29,9 +31,9 @@ namespace TelegramBot.Configurations
                             new[]
                             {
                                 InlineKeyboardButton
-                                    .WithCallbackData("🔔 یادآوری رویداد تکی ", ConstCallBackData.Menu.OnceReminder),
+                                    .WithCallbackData("🔔 یادآوری رویداد یکروز ", ConstCallBackData.Menu.OnceReminder),
                                 InlineKeyboardButton
-                                    .WithCallbackData("🗓 یادآوری رویداد دوره ای", ConstCallBackData.Menu.PeriodicReminder),
+                                    .WithCallbackData("🗓 یادآوری رویداد روزانه", ConstCallBackData.Menu.PeriodicReminder),
 
                             },
                             new[]
@@ -53,7 +55,8 @@ namespace TelegramBot.Configurations
                         });
             await _client.SendTextMessageAsync(
             chatId: chatId,
-            text: $"فعالیت مورد نظر خود را انتخاب کنید",
+            text: ConstMessage.Menu,
+            parseMode: ParseMode.Html,
             replyMarkup: inlineKeyboards);
         }
 

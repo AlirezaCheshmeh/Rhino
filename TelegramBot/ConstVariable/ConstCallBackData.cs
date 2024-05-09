@@ -27,5 +27,20 @@ namespace TelegramBot.ConstVariable
             public const string SpecificDate = "SpecificDate";
         }
 
+        public static class DailyOrSpecificDate
+        {
+            public const string Bank = "bank-";
+        }
+
+        public static class OutboundTransactionPreview
+        {
+            public const string Submit = "outboundTransactionSubmit";
+            public const string Cancel = "outboundTransactionCancel";
+        }
+        public static class Global
+        {
+            public const string Back = "back";
+        }
+
     }
 }

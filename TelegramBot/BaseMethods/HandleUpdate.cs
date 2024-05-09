@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Application.Services.CacheServices;
+using Application.Utility;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types.Enums;
+using System.Text.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Microsoft.Identity.Client;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Logging.Abstractions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Text.Json;
+using Telegram.Bot.Types.Enums;
 using TelegramBot.Configurations.Base;
-using Application.Services.CacheServices;
-using Application.Utility;
 using TelegramBot.ConstVariable;
 
 namespace TelegramBot.BaseMethods
@@ -34,60 +27,58 @@ namespace TelegramBot.BaseMethods
 
         public async Task HandleUpdateAsync(ITelegramBotClient client, Update update, CancellationToken cancellationToken = default)
         {
-
+            UserSession? userSession = null;
             try
             {
+                await client.DeleteWebhookAsync(dropPendingUpdates: true, cancellationToken: cancellationToken);
+                var userIdKey = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From?.Id.ToString();
+                if (string.IsNullOrEmpty(userIdKey))
+                    return;
+                var data = await _disCache.GetAsync(userIdKey + ConstKey.Session, cancellationToken);
+                if (data is { Length: > 0 })
+                    userSession = JsonSerializer.Deserialize<UserSession>(data);
+                if (userSession is null)
+                {
+                    userSession = new UserSession { UserId = Convert.ToInt64(userIdKey) };
+                    var json = JsonSerializer.Serialize(userSession);
+                    var bytes = Encoding.UTF8.GetBytes(json);
+                    await _disCache.SetAsync(userIdKey + ConstKey.Session, bytes, token: cancellationToken);
+                }
                 var commandState = CommandState.Init;
-                var botMessageType = BotMessageType.Text;
                 if (update.CallbackQuery is not null)
                 {
                     var callBackData = update.CallbackQuery.Data;
                     if (string.IsNullOrEmpty(callBackData))
                         return;
-                    commandState = callBackData switch
-                    {
-                        ConstCallBackData.Menu.InboundTransaction => CommandState.InsertInboundTransaction,
-                        ConstCallBackData.Menu.OutboundTransaction => CommandState.InsertOutboundTransaction,
-                        ConstCallBackData.OutboundTransaction.Daily => CommandState.OutboundTransactionDaily,
-                        _ => CommandState.Init
-                    };
-                    botMessageType = BotMessageType.CallbackQuery;
+                    if (callBackData.Contains(ConstCallBackData.DailyOrSpecificDate.Bank))
+                        commandState = CommandState.Amount;
+                    else
+                        commandState = callBackData switch
+                        {
+                            ConstCallBackData.Menu.InboundTransaction => CommandState.InsertInboundTransaction,
+                            ConstCallBackData.Menu.OutboundTransaction => CommandState.InsertOutboundTransaction,
+                            ConstCallBackData.OutboundTransaction.Daily => CommandState.ChooseBankDaily,
+                            ConstCallBackData.OutboundTransaction.SpecificDate => CommandState.ChooseBankSpecificDate,
+                            ConstCallBackData.OutboundTransactionPreview.Submit => CommandState.OutBoundTransactionSubmit,
+                            ConstCallBackData.Global.Back => userSession.LastCommand,
+                            ConstCallBackData.OutboundTransactionPreview.Cancel => CommandState.OutboundTransactionCancel,
+                            _ => CommandState.Init
+                            //todo : handle init state in call back query 
+                        };
                 }
                 else if (update.Message?.Text is not null)
                 {
-                    //todo : handle message like query(CallBackData) above 
-                }
-                var userIdKey = update.Message?.From?.Id.ToString() ?? update.CallbackQuery?.From?.Id.ToString();
-                if (string.IsNullOrEmpty(userIdKey))
-                    return;
-                UserSession? userSession = null;
-                try
-                {
-                    var data = await _disCache.GetAsync(userIdKey, cancellationToken);
-                    if (data is { Length: > 0 })
-                        userSession = JsonSerializer.Deserialize<UserSession>(data);
-                    if (userSession is null)
+                    commandState = userSession.CommandState switch
                     {
-                        userSession = new UserSession
-                        {
-                            Type = botMessageType,
-                            CommandState = commandState,
-                            UserId = Convert.ToInt64(userIdKey)
-                        };
-                        var json = JsonSerializer.Serialize(userSession);
-                        var bytes = Encoding.UTF8.GetBytes(json);
-                        await _disCache.SetAsync(userIdKey, bytes, token: cancellationToken);
-                    }
-                    else
-                    {
-                        userSession.CommandState = commandState;
-                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey, userSession);
-                    }
+                        CommandState.Amount => CommandState.Description,
+                        CommandState.Description => CommandState.OutboundTransactionPreview,
+                        _ => CommandState.Init
+                    };
                 }
-                catch (JsonException ex)
-                {
-                    await Console.Error.WriteLineAsync($"Failed to deserialize data for key '{userIdKey}': {ex.Message}");
-                }
+                userSession.LastCommand = userSession.CommandState;
+                userSession.CommandState = commandState;
+                await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Session, userSession);
+
                 // why not if else???
                 switch (update)
                 {
@@ -110,11 +101,10 @@ namespace TelegramBot.BaseMethods
 
         public class UserSession
         {
-            public BotMessageType Type { get; set; }
             public long UserId { get; set; }
-            public string LastCommand { get; set; } = string.Empty;
-            public CommandState CommandState { get; set; }
-
+            public List<int> MessageIds { get; set; } = new();
+            public CommandState LastCommand { get; set; } = CommandState.Init;
+            public CommandState CommandState { get; set; } = CommandState.Init;
         }
 
         public enum CommandState
@@ -124,14 +114,20 @@ namespace TelegramBot.BaseMethods
             InsertOutboundTransaction,
             OutboundTransactionDaily,
             OutboundTransactionSpecificDate,
+            ChooseBankDaily,
+            ChooseBankSpecificDate,
+            Amount,
+            Description,
+            OutboundTransactionPreview,
+            OutBoundTransactionSubmit,
+            OutboundTransactionCancel,
+
             InsertTransaction,
             SignAndAccept,
             Start,
-            Amount,
             Date,
             FromDate,
             ToDate,
-            Description,
             Category,
             Bank,
             LoginBefore,
@@ -139,7 +135,6 @@ namespace TelegramBot.BaseMethods
             GetLastTransaction,
             InsertDailyInBound,
             InsertWithDateInBound,
-            ChooseBank,
             BankSelect
         }
 
