@@ -15,6 +15,7 @@ using TelegramBot.Configurations.Base;
 using Application.Services.CacheServices;
 using Application.Utility;
 using TelegramBot.ConstVariable;
+using Application.Services.TelegramServices;
 
 namespace TelegramBot.BaseMethods
 {
@@ -24,10 +25,11 @@ namespace TelegramBot.BaseMethods
         private readonly HandleMessage _handleMessage;
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;
-        public HandleUpdate(ICacheServices cache, IDistributedCache disCache)
+        private readonly IDynamicButtonsServices _dynamicButtonsServices;
+        public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices)
         {
             _handleCallbackQuery = new(cache, disCache);
-            _handleMessage = new(cache, disCache);
+            _handleMessage = new(cache, disCache,dynamicButtonsServices);
             _cache = cache;
             _disCache = disCache;
         }
