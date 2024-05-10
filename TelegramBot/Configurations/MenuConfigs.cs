@@ -1,5 +1,8 @@
 ﻿using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBot.ConstMessages;
+using TelegramBot.ConstVariable;
 
 namespace TelegramBot.Configurations
 {
@@ -17,38 +20,43 @@ namespace TelegramBot.Configurations
                         {
                             new[]
                             {
-                                 InlineKeyboardButton.WithCallbackData("🆕 ایجاد پرداختی جدید", "InsertTransactionInbound"),
+                                 InlineKeyboardButton
+                                     .WithCallbackData("🆕 ایجاد پرداختی جدید", ConstCallBackData.Menu.OutboundTransaction),
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("🗞 ایجاد دریافتی جدید", "InsertTransactionOutbound"),
+                                InlineKeyboardButton
+                                    .WithCallbackData("🗞 ایجاد دریافتی جدید", ConstCallBackData.Menu.InboundTransaction),
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("🔔 یادآوری رویداد تکی ", "ReminderOnce"),
-                                InlineKeyboardButton.WithCallbackData("🗓 یادآوری رویداد دوره ای", "ReminderPeriodic"),
+                                InlineKeyboardButton
+                                    .WithCallbackData("🔔 یادآوری رویداد یکروز ", ConstCallBackData.Menu.OnceReminder),
+                                InlineKeyboardButton
+                                    .WithCallbackData("🗓 یادآوری رویداد روزانه", ConstCallBackData.Menu.PeriodicReminder),
 
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("⚙ تنظیمات", "Settings"),
-                                InlineKeyboardButton.WithCallbackData("🧮 ماشین حساب", "Calculator"),
+                                InlineKeyboardButton.WithCallbackData("⚙ تنظیمات",ConstCallBackData.Menu.Settings),
+                                InlineKeyboardButton.WithCallbackData("🧮 ماشین حساب", ConstCallBackData.Menu.Calculator),
 
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("⁉️ راهنما", "Guide"),
-                                InlineKeyboardButton.WithCallbackData("💬 پشتیبانی", "Supporter"),
+                                InlineKeyboardButton.WithCallbackData("⁉️ راهنما", ConstCallBackData.Menu.Guide),
+                                InlineKeyboardButton.WithCallbackData("💬 پشتیبانی",ConstCallBackData.Menu.Supporter),
 
                             },
                             new[]
                             {
-                                InlineKeyboardButton.WithCallbackData("💳 خرید اشتراک", "BuyAccount"),
+                                InlineKeyboardButton.WithCallbackData("💳 خرید اشتراک", ConstCallBackData.Menu.BuyAccount),
                             }
                         });
             await _client.SendTextMessageAsync(
             chatId: chatId,
-            text: $"فعالیت مورد نظر خود را انتخاب کنید",
+            text: ConstMessage.Menu,
+            parseMode: ParseMode.Html,
             replyMarkup: inlineKeyboards);
         }
 

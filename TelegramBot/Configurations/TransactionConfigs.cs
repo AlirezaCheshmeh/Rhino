@@ -1,14 +1,12 @@
 ﻿using Domain.Entities.Banks;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Telegram.Bot;
-using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramBot.BaseMethods;
+using TelegramBot.ConstMessages;
+using TelegramBot.ConstVariable;
 
 namespace TelegramBot.Configurations
 {
@@ -27,14 +25,19 @@ namespace TelegramBot.Configurations
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("روزانه", "InsertDailyTransaction"),
-                    InlineKeyboardButton.WithCallbackData("تاریخ مشخص", "InsertWithDateTransaction"),
+                    InlineKeyboardButton.WithCallbackData(ConstMessage.Today, ConstCallBackData.OutboundTransaction.Daily),
+                    InlineKeyboardButton.WithCallbackData(ConstMessage.SpecificDate, ConstCallBackData.OutboundTransaction.SpecificDate),
                 },
+                new[]
+                {
+                   InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel)
+                }
             });
 
             await _client.SendTextMessageAsync(
            chatId: chatId,
-           text: $"نوع تراکنش خود را انتخاب کنید",
+           text: ConstMessage.OutboundTransactionType,
+           parseMode: ParseMode.Html,
            replyMarkup: inlineKeyboards);
         }
 
@@ -54,16 +57,43 @@ namespace TelegramBot.Configurations
             {
                 var tempBanks = banks.Skip(skip).Take(index).ToList();
                 var tempKey = tempBanks
-                    .Select(bank => InlineKeyboardButton.WithCallbackData(bank.Name, $"bank-{bank.Id}")).ToList();
+                    .Select(bank => InlineKeyboardButton
+                        .WithCallbackData(bank.Name, ConstCallBackData.DailyOrSpecificDate.Bank + bank.Id)).ToList();
                 inlineKeyboardButtons.Add(tempKey);
                 skip = index;
                 index = skip;
             }
+            inlineKeyboardButtons.Add(new()
+            {
+                InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
+                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+
+            });
             var inlineKeyboards = new InlineKeyboardMarkup(inlineKeyboardButtons);
             await _client.SendTextMessageAsync(
           chatId: chatId,
-          text: $"نوع تراکنش خود را انتخاب کنید",
+          text: ConstMessage.ChooseBank,
+          parseMode: ParseMode.Html,
           replyMarkup: inlineKeyboards);
+        }
+
+        public async Task SendPreviewAsync(long chatId, TransactionDto transaction)
+        {
+            var message = $"{ConstMessage.OutboundTransactionPreview} \nمبلغ: {transaction.Amount}\n" +
+                          $"بابت: {transaction.Description}\n" +
+                          $"بانک: {transaction.BankId}\n";
+            //todo: please get from banks table and replace bank name with bank id,
+
+            var inlineKeyboards = new InlineKeyboardMarkup(new[]
+            {
+               new[]
+               {
+                   InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back),
+                   InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel),
+                   InlineKeyboardButton.WithCallbackData(ConstMessage.Submit, ConstCallBackData.OutboundTransactionPreview.Submit)
+               },
+            });
+            await _client.SendTextMessageAsync(chatId: chatId, text: message, replyMarkup: inlineKeyboards);
         }
     }
 

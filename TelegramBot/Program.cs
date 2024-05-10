@@ -12,6 +12,8 @@ using TelegramBot.BaseMethods;
 using Infrastructure.Database;
 using Application.BackgroundServices;
 using Application.Mediator.User.Command;
+using Application.Utility;
+using SixLabors.ImageSharp.Processing.Processors.Filters;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using TelegramBot.Configurations.Commands;
 
@@ -43,12 +45,12 @@ var serviceProvider = serviceCollection.GetRequiredService<IServiceProvider>();
 var cache = serviceCollection.GetRequiredService<ICacheServices>();
 var disCache = serviceCollection.GetRequiredService<IDistributedCache>();
 
-
+CacheExtension.Initialize(disCache);
 HandleUpdate handleUpdate = new(cache, disCache);
 HandleError handleError = new();
 
 var client = new TelegramBotClient(handleUpdate.TelegramKey);
-await Comamnd.SetBotCommands(client);
+await TelegramBot.Configurations.Commands.Command.SetBotCommands(client);
 await client.DeleteWebhookAsync();
 using var cts = new CancellationTokenSource();
 
