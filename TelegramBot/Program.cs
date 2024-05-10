@@ -15,6 +15,7 @@ using Application.Mediator.User.Command;
 using AutoMapper;
 using Application.MapperProfile;
 using Application.Services.TelegramServices;
+using Application.Utility;
 
 //ensure Database
 await using (ApplicationDataContext context = new())
@@ -55,8 +56,6 @@ var disCache = serviceCollection.GetRequiredService<IDistributedCache>();
 var dynamicButtons = serviceCollection.GetRequiredService<IDynamicButtonsServices>();
 
 CacheExtension.Initialize(disCache);
-HandleUpdate handleUpdate = new(cache, disCache);
-
 HandleUpdate handleUpdate = new(cache, disCache,dynamicButtons);
 HandleError handleError = new();
 
