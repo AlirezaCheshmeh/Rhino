@@ -1,4 +1,5 @@
 ﻿using Application.Services.CacheServices;
+using Application.Services.TelegramServices;
 using Application.Utility;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -18,17 +19,20 @@ namespace TelegramBot.BaseMethods
     {
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;
+        private readonly IDynamicButtonsServices _dynamicButtonsServices;
 
-        public HandleMessage(ICacheServices cache, IDistributedCache disCache)
+        public HandleMessage(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices)
         {
             _cache = cache;
             _disCache = disCache;
+            _dynamicButtonsServices = dynamicButtonsServices;
         }
 
         public async Task HandleMessageAsync(ITelegramBotClient client, Message message, UserSession userSession)
         {
             MenuConfigs menu = new(client);
             TransactionConfigs transactionMenu = new(client);
+            CategoryConfigs catMenu = new(client,_dynamicButtonsServices);
             try
             {
                 if (message.From is null)
