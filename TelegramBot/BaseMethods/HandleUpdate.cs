@@ -64,6 +64,9 @@ namespace TelegramBot.BaseMethods
                     else
                         commandState = callBackData switch
                         {
+                            ConstCallBackData.Menu.BuyAccount => CommandState.BuyAccount,
+                            ConstCallBackData.Menu.Reports => CommandState.Reports,
+                            ConstCallBackData.Menu.PeriodicReminder => CommandState.RemindPeriodic,
                             ConstCallBackData.Menu.InboundTransaction => CommandState.InsertInboundTransaction,
                             ConstCallBackData.Menu.Settings => CommandState.Settings,
                             ConstCallBackData.Menu.OutboundTransaction => CommandState.InsertOutboundTransaction,
@@ -162,7 +165,9 @@ namespace TelegramBot.BaseMethods
             InsertWithDateInBound,
             BankSelect,
             BackToMenu,
-           
+            BuyAccount,
+            Reports,
+            RemindPeriodic,
         }
 
         public enum BotMessageType
