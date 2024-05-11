@@ -16,6 +16,7 @@ namespace TelegramBot.ConstVariable
         public static class Menu
         {
             public const string InboundTransaction = "InboundTransaction";
+            public const string Reports = "Reports";
             public const string OutboundTransaction = "OutboundTransaction";
             public const string OnceReminder = "OnceReminder";
             public const string PeriodicReminder = "PeriodicReminder";

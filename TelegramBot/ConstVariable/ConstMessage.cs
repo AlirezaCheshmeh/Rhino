@@ -33,6 +33,7 @@ namespace TelegramBot.ConstMessages
                                      " 🔹 یادآوری تاریخ وصول چک\n" +
                                      " 🔹 محاسبه بیمه ومالیات براساس حقوق";
         public static string Cancel => "<b>عملیات لغو شد</b> ⛔";
+        public static string BuyAccount => "💰 <b>قیمت های اشتراک راینو به شرح زیر می‌باشد</b> 💰";
         public static string OutboundTransactionPreview => "⚠ تراکنش ایجاد شده شما :";
         public static string Today => "امروز";
         public static string SpecificDate => "تاریخ مشخص";
@@ -41,6 +42,7 @@ namespace TelegramBot.ConstMessages
 
         //validation
         public const string AmountValidationErrorMEssage = " ⚠ <b>مقدار قیمت به درستی وارد نشده است</b> \n <b>دوباره تلاش کنید</b>";
+        public const string AccountError = " ⚠ <b>شما اشتراک فعالی ندارید</b>";
         
 
 

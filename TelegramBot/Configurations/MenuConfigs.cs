@@ -29,24 +29,23 @@ namespace TelegramBot.Configurations
                             {
                                  InlineKeyboardButton
                                      .WithCallbackData("🆕 ایجاد پرداختی جدید", ConstCallBackData.Menu.OutboundTransaction),
-                            },
-                            new[]
-                            {
-                                InlineKeyboardButton
+                                  InlineKeyboardButton
                                     .WithCallbackData("🗞 ایجاد دریافتی جدید", ConstCallBackData.Menu.InboundTransaction),
                             },
+                            //new[]
+                            //{
+                               
+                            //},
                             new[]
                             {
                                 InlineKeyboardButton
-                                    .WithCallbackData("🔔 یادآوری رویداد یکروز ", ConstCallBackData.Menu.OnceReminder),
-                                InlineKeyboardButton
-                                    .WithCallbackData("🗓 یادآوری رویداد روزانه", ConstCallBackData.Menu.PeriodicReminder),
+                                    .WithCallbackData("🗓 یادآوری رویداد دوره‌ای", ConstCallBackData.Menu.PeriodicReminder),
 
                             },
                             new[]
                             {
                                 InlineKeyboardButton.WithCallbackData("⚙ تنظیمات",ConstCallBackData.Menu.Settings),
-                                InlineKeyboardButton.WithCallbackData("🧮 ماشین حساب", ConstCallBackData.Menu.Calculator),
+                                InlineKeyboardButton.WithCallbackData("📈 گزارشات",ConstCallBackData.Menu.Reports),
 
                             },
                             new[]
@@ -83,6 +82,6 @@ namespace TelegramBot.Configurations
 
 
        
-
+       
     }
 }

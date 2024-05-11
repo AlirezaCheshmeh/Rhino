@@ -16,6 +16,10 @@ using TelegramBot.ConstMessages;
 using TelegramBot.ConstVariable;
 using static TelegramBot.BaseMethods.HandleUpdate;
 using Application.Services.TelegramServices;
+using TelegramBot.Configurations.Commands;
+using Infrastructure.Configurations.UserPerchases;
+using Domain.Entities.UserPurchases;
+using Microsoft.EntityFrameworkCore;
 
 namespace TelegramBot.BaseMethods
 {
@@ -38,6 +42,8 @@ namespace TelegramBot.BaseMethods
             SettingMenuConfigs settingMenu = new(client);
             CategoryConfigs categoryMenu = new(client, _dynamicButtonServices);
             GlobalConfigs globalMessage = new(client);
+            PlanConfigs planConfig = new(client);
+            AccountConfigs accountConfig = new();
             try
             {
                 var userIdKey = callbackQuery.From.Id;
@@ -59,6 +65,12 @@ namespace TelegramBot.BaseMethods
                     #region BackToMenu
                     case CommandState.BackToMenu:
                         await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
+                        break;
+                    #endregion
+
+                    #region BuyAccount
+                    case CommandState.BuyAccount:
+                        await planConfig.SendPlanToUser(callbackQuery.Message.Chat.Id);
                         break;
                     #endregion
 
@@ -90,7 +102,7 @@ namespace TelegramBot.BaseMethods
                         if (cacheDate is null)
                         {
                             await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id);
-                            await menu.RollBackToMenu(userIdKey,callbackQuery.Message.Chat.Id, userSession);
+                            await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                         }
                         else
                         {
@@ -98,7 +110,7 @@ namespace TelegramBot.BaseMethods
                             await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Transaction, cacheDate);
                             await transactionMenu.SendChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
                         }
-                       
+
                         break;
                     #endregion
 
@@ -192,7 +204,40 @@ namespace TelegramBot.BaseMethods
                             .SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: ConstMessage.InsertNewBank, parseMode: ParseMode.Html, replyMarkup: inlineKeyboardInsertBank);
                         //add message id for delete rollback
                         userSession.MessageIds.Add(callbackQuery.Message.MessageId);
+                        userSession.MessageIds.Add(bankMessage.MessageId);
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        break;
+                    #endregion
+
+                    #region Reports
+                    case CommandState.Reports:
+                        var IsActive = await accountConfig.CheckUserActiveAccount(userIdKey);
+                        if (!IsActive)
+                        {
+                           var message = await globalMessage.SendYouDontHaveActiveAccount(callbackQuery.Message.Chat.Id);
+                            userSession.MessageIds.Add(message.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session,userSession);
+                        }
+                        else
+                        {
+                            await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "report");
+                        }
+                        break;
+                    #endregion
+
+                    #region PeriodicReminder
+                    case CommandState.RemindPeriodic:
+                        var IsActiveAccount = await accountConfig.CheckUserActiveAccount(userIdKey);
+                        if (!IsActiveAccount)
+                        {
+                            var message = await globalMessage.SendYouDontHaveActiveAccount(callbackQuery.Message.Chat.Id);
+                            userSession.MessageIds.Add(message.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        }
+                        else
+                        {
+                            await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "remind");
+                        }
                         break;
                         #endregion
 

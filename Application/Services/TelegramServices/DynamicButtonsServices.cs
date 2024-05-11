@@ -39,7 +39,7 @@ namespace Application.Services.TelegramServices
 
                     inlineButtons.Add(InlineKeyboardButton.WithCallbackData(buttonText, buttonCallbackData));
                 }
-
+               
                 inlineKeyboardButtons.Add(inlineButtons);
             }
 
