@@ -10,5 +10,6 @@ namespace TelegramBot.ConstVariable
     {
         public const string Session = "-Session";
         public const string Transaction = "-Transaction";
+        public const string Bank = "-Bank";
     }
 }

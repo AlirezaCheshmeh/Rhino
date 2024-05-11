@@ -7,7 +7,7 @@ namespace Application.Services.TelegramServices
 
     public interface IDynamicButtonsServices
     {
-        InlineKeyboardMarkup SetDynamicButtons<T>(int RowsCount, List<T> list, string CallbackData);
+        List<List<InlineKeyboardButton>> SetDynamicButtons<T>(int RowsCount, List<T> list, string CallbackData);
     }
 
     public class DynamicButtonsServices : IDynamicButtonsServices
@@ -19,7 +19,7 @@ namespace Application.Services.TelegramServices
             _mapper = mapper;
         }
 
-        public InlineKeyboardMarkup SetDynamicButtons<T>(int rowsCount, List<T> list, string callbackData)
+        public List<List<InlineKeyboardButton>> SetDynamicButtons<T>(int rowsCount, List<T> list, string callbackData)
         {
             var inlineKeyboardButtons = new List<List<InlineKeyboardButton>>();
             var batchCount = (int)Math.Ceiling((double)list.Count / rowsCount); 
@@ -43,7 +43,7 @@ namespace Application.Services.TelegramServices
                 inlineKeyboardButtons.Add(inlineButtons);
             }
 
-            return new InlineKeyboardMarkup(inlineKeyboardButtons);
+            return inlineKeyboardButtons;
         }
     }
 

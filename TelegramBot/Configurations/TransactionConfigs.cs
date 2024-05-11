@@ -1,4 +1,8 @@
-﻿using Domain.Entities.Banks;
+﻿using Application.Extensions;
+using Application.Services.TelegramServices;
+using Domain.Entities.Banks;
+using Domain.Entities.Categories;
+using Domain.MapperProfile;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
@@ -13,10 +17,12 @@ namespace TelegramBot.Configurations
     public class TransactionConfigs
     {
         private readonly ITelegramBotClient _client;
+        private readonly IDynamicButtonsServices _dynamicButtons;
 
-        public TransactionConfigs(ITelegramBotClient client)
+        public TransactionConfigs(ITelegramBotClient client, IDynamicButtonsServices dynamicButtons)
         {
             _client = client;
+            _dynamicButtons = dynamicButtons;
         }
 
         public async Task SendInBoundTransactionAsync(long chatId)
@@ -45,31 +51,20 @@ namespace TelegramBot.Configurations
         public async Task SendChooseBankAsync(long chatId, long telegramId)
         {
             await using ApplicationDataContext context = new();
-            var banks = await context.Set<Bank>().Where(z => z.TelegramId == telegramId).ToListAsync();
-            var inlineKeyboardButtons = new List<List<InlineKeyboardButton>>();
-            //todo : please create file like app settings json in web api, and handle some config like 4 (column count)
-            var columnCount = 4;
-            var banksLength = banks.Count / columnCount;
-            banksLength = banks.Count % columnCount == 0 ? banksLength : banksLength + 1;
-            var index = columnCount;
-            var skip = 0;
-            for (var i = 0; i < banksLength; i++)
+            var banks = await context.Set<Bank>().Where(z => z.TelegramId == telegramId).Select(x=> new NameValueDTO
             {
-                var tempBanks = banks.Skip(skip).Take(index).ToList();
-                var tempKey = tempBanks
-                    .Select(bank => InlineKeyboardButton
-                        .WithCallbackData(bank.Name, ConstCallBackData.DailyOrSpecificDate.Bank + bank.Id)).ToList();
-                inlineKeyboardButtons.Add(tempKey);
-                skip = index;
-                index = skip;
-            }
-            inlineKeyboardButtons.Add(new()
+                Id = x.Id,
+                Name = x.Name
+            }).ToListAsync();
+
+            var bankInlineKeyboardButtons = _dynamicButtons.SetDynamicButtons(4, banks, ConstCallBackData.DailyOrSpecificDate.Bank);
+            bankInlineKeyboardButtons.Add(new()
             {
                 InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
                 InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
 
             });
-            var inlineKeyboards = new InlineKeyboardMarkup(inlineKeyboardButtons);
+            var inlineKeyboards = new InlineKeyboardMarkup(bankInlineKeyboardButtons);
             await _client.SendTextMessageAsync(
           chatId: chatId,
           text: ConstMessage.ChooseBank,
@@ -79,16 +74,19 @@ namespace TelegramBot.Configurations
 
         public async Task SendPreviewAsync(long chatId, TransactionDto transaction)
         {
-            var message = $"{ConstMessage.OutboundTransactionPreview} \nمبلغ: {transaction.Amount}\n" +
+            using Infrastructure.Database.ApplicationDataContext context = new();
+            var bankName = (await context.Set<Bank>().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
+            var CatName = (await context.Set<Category>().Where(z => z.Id == transaction.CategoryId.Value).FirstOrDefaultAsync()).Name;
+            var message = $"{ConstMessage.OutboundTransactionPreview} \nمبلغ: {NumbersConvertorExtension.ToPersianNumber(transaction.Amount.Value.ToString("N0"))}\n" +
                           $"بابت: {transaction.Description}\n" +
-                          $"بانک: {transaction.BankId}\n";
+                          $"دسته یندی: {CatName}\n" +
+                          $"بانک: {bankName}\n";
             //todo: please get from banks table and replace bank name with bank id,
 
             var inlineKeyboards = new InlineKeyboardMarkup(new[]
             {
                new[]
                {
-                   InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back),
                    InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel),
                    InlineKeyboardButton.WithCallbackData(ConstMessage.Submit, ConstCallBackData.OutboundTransactionPreview.Submit)
                },

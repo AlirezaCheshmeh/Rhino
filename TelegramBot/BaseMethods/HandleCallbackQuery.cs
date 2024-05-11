@@ -15,6 +15,7 @@ using TelegramBot.Configurations.Base;
 using TelegramBot.ConstMessages;
 using TelegramBot.ConstVariable;
 using static TelegramBot.BaseMethods.HandleUpdate;
+using Application.Services.TelegramServices;
 
 namespace TelegramBot.BaseMethods
 {
@@ -22,16 +23,21 @@ namespace TelegramBot.BaseMethods
     {
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;
+        private readonly IDynamicButtonsServices _dynamicButtonServices;
 
-        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache)
+        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonServices)
         {
             _cache = cache;
             _disCache = disCache;
+            _dynamicButtonServices = dynamicButtonServices;
         }
         public async Task HandleCallbackQueryAsync(ITelegramBotClient client, CallbackQuery callbackQuery, UserSession userSession)
         {
-            MenuConfigs menu = new(client);
-            TransactionConfigs transactionMenu = new(client);
+            MenuConfigs menu = new(client, _disCache);
+            TransactionConfigs transactionMenu = new(client, _dynamicButtonServices);
+            SettingMenuConfigs settingMenu = new(client);
+            CategoryConfigs categoryMenu = new(client, _dynamicButtonServices);
+            GlobalConfigs globalMessage = new(client);
             try
             {
                 var userIdKey = callbackQuery.From.Id;
@@ -48,41 +54,77 @@ namespace TelegramBot.BaseMethods
                 }
                 switch (userSession.CommandState)
                 {
+
+                    //backTo Menu
+                    #region BackToMenu
+                    case CommandState.BackToMenu:
+                        await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
+                        break;
+                    #endregion
+
                     #region InsertOutBoundTransaction
 
                     case CommandState.InsertOutboundTransaction:
                         await transactionMenu.SendInBoundTransactionAsync(callbackQuery.Message.Chat.Id);
                         break;
+                    #endregion
+
+                    #region OutboundTransactionDaily
                     case CommandState.OutboundTransactionDaily:
                         await transactionMenu.SendInBoundTransactionAsync(callbackQuery.Message.Chat.Id);
                         break;
-                    case CommandState.ChooseBankDaily:
-                        var transactionChooseBank = new TransactionDto();
-                        var json = JsonSerializer.Serialize(transactionChooseBank);
-                        var bytes = Encoding.UTF8.GetBytes(json);
-                        await _disCache.SetAsync(userIdKey + ConstKey.Transaction, bytes);
-                        await transactionMenu.SendChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
+                    #endregion
+
+                    #region ChooseCategoryDaily
+                    case CommandState.ChooseCategoryDaily:
+                        var transaction = new TransactionDto();
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, transaction);
+                        await categoryMenu.SendCategoriesToUser(callbackQuery.Message.Chat.Id);
                         break;
+                    #endregion
+
+                    #region ChooseBankDaily
+                    case CommandState.ChooseBankDaily:
+                        var cacheDate = await CacheExtension.GetValueAsync<TransactionDto>(userIdKey + ConstKey.Transaction);
+                        var catId = Convert.ToInt64(callbackQuery.Data?.Split("-").LastOrDefault());//todo: not found data and exception
+                        if (cacheDate is null)
+                        {
+                            await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id);
+                            await menu.RollBackToMenu(userIdKey,callbackQuery.Message.Chat.Id, userSession);
+                        }
+                        else
+                        {
+                            cacheDate.CategoryId = catId;
+                            await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Transaction, cacheDate);
+                            await transactionMenu.SendChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
+                        }
+                       
+                        break;
+                    #endregion
+
+                    #region Amount
                     case CommandState.Amount:
-                        //todo : DRY please write generic service for update, get and set cache.
-                        TransactionDto? transactionAmount = null;
-                        var data = await _disCache.GetAsync(userIdKey + ConstKey.Transaction);
-                        if (data is { Length: > 0 })
-                            transactionAmount = JsonSerializer.Deserialize<TransactionDto>(data);
-                        if (transactionAmount is null) return;//todo : show suitable message 
-                        //
+                        var cacheDateAmount = await CacheExtension.GetValueAsync<TransactionDto>(userIdKey + ConstKey.Transaction);
                         var bankId = Convert.ToInt64(callbackQuery.Data?.Split("-").LastOrDefault());//todo not found data and exception
-                        transactionAmount.BankId = bankId;
-                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Transaction, transactionAmount);
+                        if (cacheDateAmount is null)
+                        {
+                            await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id);
+                            await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
+                        }
+                        cacheDateAmount!.BankId = bankId;
+                        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Transaction, cacheDateAmount);
                         var inlineKeyboardAmount = new InlineKeyboardMarkup(new[]
                         {
-                            new[] {InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) },
+                            new[] {InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.Global.BackToMenu) },
                         });
                         var amountMessage = await client
                             .SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: ConstMessage.InsertAmount, parseMode: ParseMode.Html, replyMarkup: inlineKeyboardAmount);
                         userSession.MessageIds.Add(amountMessage.MessageId);
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                         break;
+                    #endregion
+
+                    #region OutBoundTransactionSubmit
                     case CommandState.OutBoundTransactionSubmit:
                         TransactionDto? transactionSubmitted = null;
                         var value = await _disCache.GetAsync(userIdKey + ConstKey.Transaction);
@@ -107,33 +149,18 @@ namespace TelegramBot.BaseMethods
                         userSession.MessageIds.Add(descriptionMessage.MessageId);
                         Task.Delay(150).Wait();
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
-                        userSession.MessageIds.RemoveAll(i => i == userSession.MessageIds.First());
-                        userSession.MessageIds.ForEach(item =>
-                        {
-                            client.DeleteMessageAsync(callbackQuery.Message.Chat.Id, item);
-                        });
-                        await _disCache.RemoveAsync(userIdKey + ConstKey.Transaction);
+                        await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                         break;
+                    #endregion
+
+                    #region OutboundTransactionCancel
                     case CommandState.OutboundTransactionCancel:
                         var cancelMessage = await client
                             .SendTextMessageAsync(callbackQuery.Message.Chat.Id, ConstMessage.Cancel, parseMode: ParseMode.Html);
                         Task.Delay(150).Wait();
                         userSession.MessageIds.Add(cancelMessage.MessageId);
-                        userSession.MessageIds.RemoveAll(i => i == userSession.MessageIds.First());
-                        foreach (var id in userSession.MessageIds)
-                        {
-                            try
-                            {
-                                await client.DeleteMessageAsync(callbackQuery.Message.Chat.Id, id);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex);
-                            }
-                        }
-
                         await _disCache.RemoveAsync(userIdKey + ConstKey.Transaction);
-                        await _disCache.RemoveAsync(userIdKey + ConstKey.Session);
+                        await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                         break;
                     #endregion
 
@@ -143,73 +170,33 @@ namespace TelegramBot.BaseMethods
                         await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "inbound");
                         break;
 
+                    #endregion
+
+                    #region Settings
+
+                    case CommandState.Settings:
+                        await settingMenu.SendSettingMenuToUser(callbackQuery.Message.Chat.Id);
+                        userSession.MessageIds.Add(callbackQuery.Message.MessageId);
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        break;
+
+                    #endregion
+
+                    #region InsertNewBank
+                    case CommandState.InsertNewbank:
+                        var inlineKeyboardInsertBank = new InlineKeyboardMarkup(new[]
+                        {
+                            new[] {InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) },
+                        });
+                        var bankMessage = await client
+                            .SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: ConstMessage.InsertNewBank, parseMode: ParseMode.Html, replyMarkup: inlineKeyboardInsertBank);
+                        //add message id for delete rollback
+                        userSession.MessageIds.Add(callbackQuery.Message.MessageId);
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        break;
                         #endregion
 
 
-                        //case CommandState.InsertTransaction:
-                        //    session.CommandState = CommandState.Amount;
-                        //    await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                        //    await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "هزینه را وارد کنید💸 \n برای مثال 120000");
-                        //    break;
-                        //case CommandState.AcceptTransaction:
-                        //    var cacheData = await _disCache.GetAsync($"{userIdKey}-transaction");
-                        //    var transaction = JsonSerializer.Deserialize<Transaction>(cacheData);
-                        //    await using (ApplicationDataContext context = new())
-                        //    {
-                        //        await context.Set<Transaction>().AddAsync(transaction);
-                        //        await context.SaveChangesAsync();
-                        //        await _disCache.RemoveAsync($"{userIdKey}-transaction");
-                        //    }
-
-                        //    session.CommandState = CommandState.GetLastTransaction;
-                        //    await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-
-                        //    await client.SendTextMessageAsync(
-                        //    chatId: callbackQuery.Message.Chat.Id,
-                        //    text: $"با موفقیت ثبت شد✔️");
-                        //    //send menu to user
-                        //    await menu.SendMenuToUserAsync(callbackQuery.Message.Chat.Id);
-
-                        //    break;
-                        //case CommandState.GetLastTransaction:
-                        //    await using (ApplicationDataContext context = new())
-                        //    {
-                        //        var data = await context.Set<Transaction>().Where(z => z.TelegramId == callbackQuery.From.Id).OrderByDescending(z => z.CreatedAt).FirstOrDefaultAsync();
-                        //        await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, $"مقدار هزینه: {data.Amount} \n تاریخ ثبت: {DateExtension.ConvertToPersianDate(data.CreatedAt.ToString("yyy/MM/dd"))} \n  توضیحات: {data.Description}");
-                        //    }
-                        //    break;
-                        //case CommandState.InsertInboundTransaction:
-                        //    await transactionMenu.SendInBoundTransactionAsync(callbackQuery.Message.Chat.Id);
-                        //    //session.CommandState = CommandState.ChooseBank;
-                        //    //await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                        //    break;
-                        //case CommandState.InsertDailyInBound:
-                        //    await transactionMenu.SendInBoundTransactionAsync(callbackQuery.Message.Chat.Id);
-
-                        //    break;
-                        //case CommandState.BankSelect:
-                        //    try
-                        //    {
-                        //        var bankId = Convert.ToInt64(callbackQuery.Data.Split("-").LastOrDefault());
-                        //        await CacheExtension.UpdateCacheAsync(_disCache, $"{userIdKey}-bankID", bankId);
-                        //        session.CommandState = CommandState.Amount;
-                        //        await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                        //        await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "هزینه را وارد کنید💸 \n برای مثال 120000");
-                        //    }
-                        //    catch (Exception ex)
-                        //    {
-                        //        Console.WriteLine(ex);
-                        //        throw;
-                        //    }
-
-                        //    break;
-                        //case CommandState.ChooseBank:
-                        //    await transactionMenu.SendChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
-                        //    session.CommandState = CommandState.BankSelect;
-                        //    await CacheExtension.UpdateCacheAsync(_disCache, userIdKey.ToString(), session);
-                        //    break;
-                        //default:
-                        //    break;
                 }
 
 
@@ -234,6 +221,7 @@ namespace TelegramBot.BaseMethods
         public long? TelegramId { get; set; }
         public long? MessageId { get; set; }
         public long? BankId { get; set; }
+        public string? BankName { get; set; }
         public long? CategoryId { get; set; }
         public DateTime PayDateTime { get; set; } = DateTime.Now;
     }

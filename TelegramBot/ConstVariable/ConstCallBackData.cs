@@ -8,6 +8,11 @@ namespace TelegramBot.ConstVariable
 {
     public static class ConstCallBackData
     {
+        public static class BankMenu
+        {
+            public const string InsertNewBank = "InsertNewBank";
+            public const string GetBankList = "GetBankList";
+        }
         public static class Menu
         {
             public const string InboundTransaction = "InboundTransaction";
@@ -25,11 +30,20 @@ namespace TelegramBot.ConstVariable
         {
             public const string Daily = "daily";
             public const string SpecificDate = "SpecificDate";
+            public const string Amount = "Amount";
+           
+        }
+
+        public static class DailyCategory
+        {
+            //does not need - in string handle in set dynamic buttons
+            public const string Category = "category";
         }
 
         public static class DailyOrSpecificDate
         {
-            public const string Bank = "bank-";
+            //does not need - in string handle in set dynamic buttons
+            public const string Bank = "bank";
         }
 
         public static class OutboundTransactionPreview
@@ -40,6 +54,7 @@ namespace TelegramBot.ConstVariable
         public static class Global
         {
             public const string Back = "back";
+            public const string BackToMenu = "backToMenu";
         }
 
     }

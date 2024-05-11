@@ -16,6 +16,8 @@ using AutoMapper;
 using Application.MapperProfile;
 using Application.Services.TelegramServices;
 using Application.Utility;
+using TelegramBot.ConstVariable;
+using TelegramBot.Configurations.Base;
 
 //ensure Database
 await using (ApplicationDataContext context = new())

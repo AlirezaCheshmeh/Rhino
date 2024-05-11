@@ -6,6 +6,9 @@ using AutoMapper;
 using Telegram.Bot.Types.ReplyMarkups;
 using Application.Services.TelegramServices;
 using Domain.MapperProfile;
+using Telegram.Bot.Types.Enums;
+using TelegramBot.ConstMessages;
+using TelegramBot.ConstVariable;
 
 namespace TelegramBot.Configurations
 {
@@ -28,10 +31,18 @@ namespace TelegramBot.Configurations
                 Name = z.Name,
                 Id = z.Id
             }).ToListAsync();
-            var inlineKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, "category");
+            var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, "category");
+            inlineCategoryKeyboards.Add(new()
+            {
+                InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
+                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+
+            });
+            var inlineKeyboards = new InlineKeyboardMarkup(inlineCategoryKeyboards);
             await _client.SendTextMessageAsync(
           chatId: chatId,
-          text: $"دسته بندی مورد نظر را انتخاب کنید",
+          text: ConstMessage.ChooseCategory,
+          parseMode:ParseMode.Html,
           replyMarkup: inlineKeyboards);
         }
     }
