@@ -21,7 +21,7 @@ namespace TelegramBot.BaseMethods
         private readonly IDynamicButtonsServices _dynamicButtonsServices;
         public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices)
         {
-            _handleCallbackQuery = new(cache, disCache);
+            _handleCallbackQuery = new(cache, disCache,dynamicButtonsServices);
             _handleMessage = new(cache, disCache,dynamicButtonsServices);
             _cache = cache;
             _disCache = disCache;
@@ -52,17 +52,29 @@ namespace TelegramBot.BaseMethods
                     var callBackData = update.CallbackQuery.Data;
                     if (string.IsNullOrEmpty(callBackData))
                         return;
+                    //handle spesefic commands
                     if (callBackData.Contains(ConstCallBackData.DailyOrSpecificDate.Bank))
+                    {
                         commandState = CommandState.Amount;
+                        callBackData = callBackData.Substring(0,4);
+                    }
+                    if (callBackData.Contains(ConstCallBackData.DailyCategory.Category))
+                        commandState = CommandState.ChooseBankDaily;
+
                     else
                         commandState = callBackData switch
                         {
                             ConstCallBackData.Menu.InboundTransaction => CommandState.InsertInboundTransaction,
+                            ConstCallBackData.Menu.Settings => CommandState.Settings,
                             ConstCallBackData.Menu.OutboundTransaction => CommandState.InsertOutboundTransaction,
-                            ConstCallBackData.OutboundTransaction.Daily => CommandState.ChooseBankDaily,
+                            ConstCallBackData.BankMenu.GetBankList => CommandState.GetBankList,
+                            ConstCallBackData.BankMenu.InsertNewBank => CommandState.InsertNewbank,
+                            ConstCallBackData.OutboundTransaction.Daily => CommandState.ChooseCategoryDaily,
                             ConstCallBackData.OutboundTransaction.SpecificDate => CommandState.ChooseBankSpecificDate,
+                            ConstCallBackData.DailyOrSpecificDate.Bank => CommandState.Amount,
                             ConstCallBackData.OutboundTransactionPreview.Submit => CommandState.OutBoundTransactionSubmit,
                             ConstCallBackData.Global.Back => userSession.LastCommand,
+                            ConstCallBackData.Global.BackToMenu => CommandState.BackToMenu,
                             ConstCallBackData.OutboundTransactionPreview.Cancel => CommandState.OutboundTransactionCancel,
                             _ => CommandState.Init
                             //todo : handle init state in call back query 
@@ -70,10 +82,12 @@ namespace TelegramBot.BaseMethods
                 }
                 else if (update.Message?.Text is not null)
                 {
+
                     commandState = userSession.CommandState switch
                     {
                         CommandState.Amount => CommandState.Description,
                         CommandState.Description => CommandState.OutboundTransactionPreview,
+                        CommandState.InsertNewbank => CommandState.InsertNewbankMessage,
                         _ => CommandState.Init
                     };
                 }
@@ -112,10 +126,12 @@ namespace TelegramBot.BaseMethods
         public enum CommandState
         {
             Init,
+
             InsertInboundTransaction,
             InsertOutboundTransaction,
             OutboundTransactionDaily,
             OutboundTransactionSpecificDate,
+            ChooseCategoryDaily,
             ChooseBankDaily,
             ChooseBankSpecificDate,
             Amount,
@@ -124,20 +140,29 @@ namespace TelegramBot.BaseMethods
             OutBoundTransactionSubmit,
             OutboundTransactionCancel,
 
+
+            BankInsertPreview,
+            Settings,
+            InsertNewbank,
+            InsertNewbankMessage,
+            GetBankList,
+
+
             InsertTransaction,
             SignAndAccept,
             Start,
             Date,
             FromDate,
             ToDate,
-            Category,
             Bank,
             LoginBefore,
             AcceptTransaction,
             GetLastTransaction,
             InsertDailyInBound,
             InsertWithDateInBound,
-            BankSelect
+            BankSelect,
+            BackToMenu,
+           
         }
 
         public enum BotMessageType
