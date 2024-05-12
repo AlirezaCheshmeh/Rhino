@@ -136,7 +136,7 @@ namespace TelegramBot.Configurations
                new[]
                {
                    InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel),
-                   InlineKeyboardButton.WithCallbackData(ConstMessage.Submit, ConstCallBackData.OutboundTransactionPreview.Submit)
+                   InlineKeyboardButton.WithCallbackData(ConstMessage.Submit,(transaction.Type == Domain.Enums.TransactionType.OutBound?ConstCallBackData.OutboundTransactionPreview.Submit:ConstCallBackData.InboundTransactionPreview.Submit))
                },
             });
             await _client.SendTextMessageAsync(chatId: chatId, text: message, replyMarkup: inlineKeyboards);

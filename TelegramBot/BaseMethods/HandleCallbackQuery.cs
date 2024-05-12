@@ -291,7 +291,7 @@ namespace TelegramBot.BaseMethods
                                 var newTransaction = new Transaction
                                 {
                                     Amount = InboundtransactionSubmitted.Amount!.Value,
-                                    Type = TransactionType.InBound,
+                                    Type = InboundtransactionSubmitted.Type,
                                     Description = InboundtransactionSubmitted.Description,
                                     BankId = InboundtransactionSubmitted.BankId,
                                     MessageId = callbackQuery.Message.MessageId,
