@@ -9,6 +9,7 @@ using Domain.MapperProfile;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.ConstMessages;
 using TelegramBot.ConstVariable;
+using static TelegramBot.ConstVariable.ConstCallBackData;
 
 namespace TelegramBot.Configurations
 {
@@ -23,7 +24,7 @@ namespace TelegramBot.Configurations
             _dynamicButtonsServices = dynamicButtonsServices;
         }
 
-        public async Task SendCategoriesToUser(long chatId)
+        public async Task SendInBoundCategoriesToUser(long chatId)
         {
             await using ApplicationDataContext context = new();
             var cats = await context.Set<Category>().Select(z => new NameValueDTO
@@ -31,7 +32,7 @@ namespace TelegramBot.Configurations
                 Name = z.Name,
                 Id = z.Id
             }).ToListAsync();
-            var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, "category");
+            var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, InboundDailyCategory.Category);
             inlineCategoryKeyboards.Add(new()
             {
                 InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
@@ -43,6 +44,31 @@ namespace TelegramBot.Configurations
           chatId: chatId,
           text: ConstMessage.ChooseCategory,
           parseMode:ParseMode.Html,
+          replyMarkup: inlineKeyboards);
+        }
+
+
+
+        public async Task SendOutBoundCategoriesToUser(long chatId)
+        {
+            await using ApplicationDataContext context = new();
+            var cats = await context.Set<Category>().Select(z => new NameValueDTO
+            {
+                Name = z.Name,
+                Id = z.Id
+            }).ToListAsync();
+            var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, DailyCategory.Category);
+            inlineCategoryKeyboards.Add(new()
+            {
+                InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
+                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+
+            });
+            var inlineKeyboards = new InlineKeyboardMarkup(inlineCategoryKeyboards);
+            await _client.SendTextMessageAsync(
+          chatId: chatId,
+          text: ConstMessage.ChooseCategory,
+          parseMode: ParseMode.Html,
           replyMarkup: inlineKeyboards);
         }
     }

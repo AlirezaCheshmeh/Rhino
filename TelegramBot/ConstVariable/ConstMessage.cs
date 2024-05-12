@@ -15,13 +15,12 @@ namespace TelegramBot.ConstMessages
         public static string InsertAmount => "💰 <b>لطفا مبلغ پرداختی را وارد کنید</b> 💰 ";
         public static string InsertDescription => "<b>لطفا بابت پراختی را واردکنید</b> 📔";
         public static string ChooseCategory => "<b>دسته بندی مورد نظر را انتخاب کنید</b> 📔";
+        public static string ChooseBank => "<b>بانک خود را انتخاب کنید</b> 🏧";
+        public static string OutboundTransactionType => "<b>پرداخت را در چه تاریخی انجام داده اید</b> ⏳";
+        public static string IntboundTransactionType => "<b>دریافت را در چه تاریخی انجام داده اید</b> ⏳";
 
         //errors
         public static string Error => "<b>خطایی رخ داده است دوباره تلاش کنبد</b> ⚠";
-
-
-        public static string ChooseBank => "<b>بانک خود را انتخاب کنید</b> 🏧";
-        public static string OutboundTransactionType => "<b>پرداخت را در چه تاریخی انجام داده اید</b> ⏳";
 
         //menu and global
         public static string Back => "بازگشت 🔙";
