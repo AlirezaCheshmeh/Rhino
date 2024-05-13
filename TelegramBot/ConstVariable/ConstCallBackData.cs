@@ -35,22 +35,49 @@ namespace TelegramBot.ConstVariable
            
         }
 
+        public static class InboundTransaction
+        {
+            public const string Daily = "inbounddaily";
+            public const string SpecificDate = "inboundSpecificDate";
+            public const string Amount = "inboundAmount";
+
+        }
+
         public static class DailyCategory
         {
             //does not need - in string handle in set dynamic buttons
-            public const string Category = "category";
+            public const string Category = "outboundcategory";
         }
 
         public static class DailyOrSpecificDate
         {
             //does not need - in string handle in set dynamic buttons
-            public const string Bank = "bank";
+            public const string Bank = "outboundbank";
         }
+
+        public static class InboundDailyCategory
+        {
+            //does not need - in string handle in set dynamic buttons
+            public const string Category = "inboundcategory";
+        }
+
+        public static class InboundDailyOrSpecificDate
+        {
+            //does not need - in string handle in set dynamic buttons
+            public const string Bank = "inboundbank";
+        }
+
 
         public static class OutboundTransactionPreview
         {
             public const string Submit = "outboundTransactionSubmit";
             public const string Cancel = "outboundTransactionCancel";
+        }
+
+        public static class InboundTransactionPreview
+        {
+            public const string Submit = "inboundTransactionSubmit";
+            public const string Cancel = "intboundTransactionCancel";
         }
         public static class Global
         {

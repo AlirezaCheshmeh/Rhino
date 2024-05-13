@@ -21,8 +21,8 @@ namespace TelegramBot.BaseMethods
         private readonly IDynamicButtonsServices _dynamicButtonsServices;
         public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices)
         {
-            _handleCallbackQuery = new(cache, disCache,dynamicButtonsServices);
-            _handleMessage = new(cache, disCache,dynamicButtonsServices);
+            _handleCallbackQuery = new(cache, disCache, dynamicButtonsServices);
+            _handleMessage = new(cache, disCache, dynamicButtonsServices);
             _cache = cache;
             _disCache = disCache;
         }
@@ -52,33 +52,69 @@ namespace TelegramBot.BaseMethods
                     var callBackData = update.CallbackQuery.Data;
                     if (string.IsNullOrEmpty(callBackData))
                         return;
-                    //handle spesefic commands
+
+                    //handle spesefic commands start=================================================
                     if (callBackData.Contains(ConstCallBackData.DailyOrSpecificDate.Bank))
                     {
                         commandState = CommandState.Amount;
-                        callBackData = callBackData.Substring(0,4);
+                        callBackData = callBackData.Substring(0, 4);
                     }
-                    if (callBackData.Contains(ConstCallBackData.DailyCategory.Category))
+                    else if (callBackData.Contains(ConstCallBackData.DailyCategory.Category))
+                    {
                         commandState = CommandState.ChooseBankDaily;
+                    }
 
+                    else if (callBackData.Contains(ConstCallBackData.InboundDailyOrSpecificDate.Bank))
+                    {
+                        commandState = CommandState.InboundAmount;
+                        callBackData = callBackData.Substring(0, 4);
+                    }
+                    else if (callBackData.Contains(ConstCallBackData.InboundDailyCategory.Category))
+                    {
+                        commandState = CommandState.InboundChooseBankDaily;
+                    }
+                    //handle spesefic commands end=================================================
+
+                    //handle other states
                     else
                         commandState = callBackData switch
                         {
+                            //menu start===================================================================
                             ConstCallBackData.Menu.BuyAccount => CommandState.BuyAccount,
                             ConstCallBackData.Menu.Reports => CommandState.Reports,
                             ConstCallBackData.Menu.PeriodicReminder => CommandState.RemindPeriodic,
                             ConstCallBackData.Menu.InboundTransaction => CommandState.InsertInboundTransaction,
                             ConstCallBackData.Menu.Settings => CommandState.Settings,
                             ConstCallBackData.Menu.OutboundTransaction => CommandState.InsertOutboundTransaction,
+                            //menu end===================================================================
+
+                            //bank start====================================================================
                             ConstCallBackData.BankMenu.GetBankList => CommandState.GetBankList,
                             ConstCallBackData.BankMenu.InsertNewBank => CommandState.InsertNewbank,
-                            ConstCallBackData.OutboundTransaction.Daily => CommandState.ChooseCategoryDaily,
-                            ConstCallBackData.OutboundTransaction.SpecificDate => CommandState.ChooseBankSpecificDate,
+                            //bank end====================================================================
+
+                            //inbound start=================================================================
+                            ConstCallBackData.InboundTransaction.Daily => CommandState.InboundChooseCategoryDaily,
+                            ConstCallBackData.InboundDailyCategory.Category => CommandState.InboundChooseBankDaily,
+                            ConstCallBackData.InboundTransaction.SpecificDate => CommandState.InboundChooseBankSpecificDate,
+                            ConstCallBackData.InboundTransactionPreview.Submit => CommandState.InBoundTransactionSubmit,
+                            ConstCallBackData.InboundTransactionPreview.Cancel => CommandState.InboundTransactionCancel,
                             ConstCallBackData.DailyOrSpecificDate.Bank => CommandState.Amount,
+                            //inbound end===================================================================
+
+                            //outbound start=================================================================
+                            ConstCallBackData.OutboundTransaction.Daily => CommandState.ChooseCategoryDaily,
+                            ConstCallBackData.DailyCategory.Category => CommandState.ChooseBankDaily,
+                            ConstCallBackData.OutboundTransaction.SpecificDate => CommandState.ChooseBankSpecificDate,
                             ConstCallBackData.OutboundTransactionPreview.Submit => CommandState.OutBoundTransactionSubmit,
+                            ConstCallBackData.OutboundTransactionPreview.Cancel => CommandState.OutboundTransactionCancel,
+                            ConstCallBackData.InboundDailyOrSpecificDate.Bank => CommandState.InboundAmount,
+                            //outbound end===================================================================
+
+                            //global start===================================================================
                             ConstCallBackData.Global.Back => userSession.LastCommand,
                             ConstCallBackData.Global.BackToMenu => CommandState.BackToMenu,
-                            ConstCallBackData.OutboundTransactionPreview.Cancel => CommandState.OutboundTransactionCancel,
+                            //global end===================================================================
                             _ => CommandState.Init
                             //todo : handle init state in call back query 
                         };
@@ -88,9 +124,22 @@ namespace TelegramBot.BaseMethods
 
                     commandState = userSession.CommandState switch
                     {
+                        //outbound start========================================================
                         CommandState.Amount => CommandState.Description,
                         CommandState.Description => CommandState.OutboundTransactionPreview,
+                        CommandState.OutboundTransactionPreview => CommandState.OutboundTransactionPreview,
+                        //outbound end==========================================================
+
+                        //Inbound start========================================================
+                        CommandState.InboundAmount => CommandState.InboundDescription,
+                        CommandState.InboundDescription => CommandState.InboundTransactionPreview,
+                        CommandState.InboundTransactionPreview => CommandState.InboundTransactionPreview,
+                        //Inbound end==========================================================
+
+                        //settings =>Bank start================================================
                         CommandState.InsertNewbank => CommandState.InsertNewbankMessage,
+                        //settings =>Bank end==================================================
+
                         _ => CommandState.Init
                     };
                 }
@@ -98,7 +147,6 @@ namespace TelegramBot.BaseMethods
                 userSession.CommandState = commandState;
                 await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Session, userSession);
 
-                // why not if else???
                 switch (update)
                 {
                     case { Type: UpdateType.Message, Message.Type: MessageType.Text }:
@@ -111,13 +159,14 @@ namespace TelegramBot.BaseMethods
             }
             catch (Exception ex)
             {
-                //todo: set sa
-                throw;
+                //todo: log here
+                Console.WriteLine(ex);
             }
 
         }
 
 
+        //user session
         public class UserSession
         {
             public long UserId { get; set; }
@@ -126,11 +175,25 @@ namespace TelegramBot.BaseMethods
             public CommandState CommandState { get; set; } = CommandState.Init;
         }
 
+        //command states
         public enum CommandState
         {
             Init,
 
+            //inbound
             InsertInboundTransaction,
+            InboundTransactionDaily,
+            InboundTransactionSpecificDate,
+            InboundChooseCategoryDaily,
+            InboundChooseBankDaily,
+            InboundChooseBankSpecificDate,
+            InboundAmount,
+            InboundDescription,
+            InboundTransactionPreview,
+            InBoundTransactionSubmit,
+            InboundTransactionCancel,
+
+            //outbound
             InsertOutboundTransaction,
             OutboundTransactionDaily,
             OutboundTransactionSpecificDate,
@@ -143,37 +206,27 @@ namespace TelegramBot.BaseMethods
             OutBoundTransactionSubmit,
             OutboundTransactionCancel,
 
-
+            //settings
             BankInsertPreview,
             Settings,
             InsertNewbank,
             InsertNewbankMessage,
             GetBankList,
 
-
+            //transaction
             InsertTransaction,
-            SignAndAccept,
-            Start,
-            Date,
-            FromDate,
-            ToDate,
+
+            //bank
             Bank,
-            LoginBefore,
-            AcceptTransaction,
-            GetLastTransaction,
-            InsertDailyInBound,
-            InsertWithDateInBound,
             BankSelect,
+
+            //global
             BackToMenu,
+
+            //features
             BuyAccount,
             Reports,
             RemindPeriodic,
-        }
-
-        public enum BotMessageType
-        {
-            Text,
-            CallbackQuery
         }
 
     }

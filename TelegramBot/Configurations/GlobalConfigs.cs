@@ -24,9 +24,9 @@ namespace TelegramBot.Configurations
 
 
         //errors
-        public async Task SendErrorToUser(long chatId)
+        public async Task<Message> SendErrorToUser(long chatId)
         {
-            await _client.SendTextMessageAsync(chatId, ConstMessage.Error, parseMode: ParseMode.Html);
+           return  await _client.SendTextMessageAsync(chatId, ConstMessage.Error, parseMode: ParseMode.Html);
         }
 
 

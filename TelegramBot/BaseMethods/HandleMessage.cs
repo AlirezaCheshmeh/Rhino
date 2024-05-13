@@ -35,7 +35,7 @@ namespace TelegramBot.BaseMethods
         public async Task HandleMessageAsync(ITelegramBotClient client, Message message, UserSession userSession)
         {
             MenuConfigs menu = new(client, _disCache);
-            TransactionConfigs transactionMenu = new(client,_dynamicButtonsServices);
+            TransactionConfigs transactionMenu = new(client, _dynamicButtonsServices);
             CategoryConfigs catMenu = new(client, _dynamicButtonsServices);
             GlobalConfigs globalMessage = new(client);
             try
@@ -66,6 +66,7 @@ namespace TelegramBot.BaseMethods
                         break;
                     #endregion
 
+                    //OutBound start==================================
                     #region Description
                     case CommandState.Description:
                         TransactionDto? transactionAmount = null;
@@ -111,13 +112,91 @@ namespace TelegramBot.BaseMethods
                     #region OutboundTransactionPreview
                     case CommandState.OutboundTransactionPreview:
                         var transaction = await CacheExtension.GetValueAsync<TransactionDto>(userIdKey + ConstKey.Transaction);
-                        if (transaction is null) return; // todo : show suitable message to client.
-                        transaction.Description = message.Text;
-                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, transaction);
-                        await transactionMenu.SendPreviewAsync(message.Chat.Id, transaction);
+                        if (transaction is null)
+                        {
+                            await globalMessage.SendErrorToUser(message.Chat.Id);
+                            await menu.RollBackToMenu(userIdKey, message.Chat.Id, userSession);
+                        }
+                        else
+                        {
+
+                            transaction.Description = message.Text;
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, transaction);
+                            await transactionMenu.SendPreviewAsync(message.Chat.Id, transaction);
+                        }
+                        break;
+                    #endregion
+                    //OutBound end=====================================
+
+
+                    //Inbound start==================================
+                    #region InboundDescription
+                    case CommandState.InboundDescription:
+                        TransactionDto? InboundtransactionAmount = null;
+                        InboundtransactionAmount =
+                            await CacheExtension.GetValueAsync<TransactionDto>(userIdKey + ConstKey.Transaction);
+                        //convert to english numbers
+                        var InboundamountResult = NumbersConvertorExtension.ToEnglishNumber(message.Text);
+                        if (InboundtransactionAmount is null)
+                        {
+                            var ErrorMessage = await globalMessage.SendErrorToUser(message.Chat.Id);
+                            userSession.MessageIds.Add(ErrorMessage.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                            await menu.RollBackToMenu(userIdKey, message.Chat.Id, userSession);
+                        }
+                        if (!(IsInteger(InboundamountResult) && IsDouble(InboundamountResult)))
+                        {
+                            Message ErrorMessage = await globalMessage.SendAmountValidationErrorMessageToUser(message.Chat.Id);
+                            userSession.MessageIds.Add(message.MessageId);
+                            userSession.MessageIds.Add(ErrorMessage.MessageId);
+                            userSession.CommandState = CommandState.InboundAmount;
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        }
+                        else
+                        {
+                            _ = decimal.TryParse(InboundamountResult, out var amount);
+                            InboundtransactionAmount!.Amount = amount;
+                            await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Transaction, InboundtransactionAmount);
+
+                            var inlineKeyboardDescription = new InlineKeyboardMarkup(new[]
+                                 {
+                                new[]
+                                {
+                                    InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back)
+                                },
+                            });
+                            var descriptionMessage = await client
+                                .SendTextMessageAsync(message.Chat.Id, ConstMessage.InsertDescription, parseMode: ParseMode.Html,
+                                    replyMarkup: inlineKeyboardDescription);
+                            userSession.MessageIds.Add(descriptionMessage.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        }
                         break;
                     #endregion
 
+                    #region InboundTransactionPreview
+                    case CommandState.InboundTransactionPreview:
+                        var Inboundtransaction = await CacheExtension.GetValueAsync<TransactionDto>(userIdKey + ConstKey.Transaction);
+                        if (Inboundtransaction is null)
+                        {
+                            var ErrorMessage = await globalMessage.SendErrorToUser(message.Chat.Id);
+                            userSession.MessageIds.Add(ErrorMessage.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                            await menu.RollBackToMenu(userIdKey, message.Chat.Id, userSession);
+                        }
+                        else
+                        {
+
+                            Inboundtransaction.Description = message.Text;
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, Inboundtransaction);
+                            await transactionMenu.SendPreviewAsync(message.Chat.Id, Inboundtransaction);
+                        }
+                        break;
+                    #endregion
+                    //Inbound end=====================================
+
+
+                    //settings => Bank start========================
                     #region InsertNewBankMessage
                     case CommandState.InsertNewbankMessage:
                         var bank = new Bank
@@ -140,8 +219,7 @@ namespace TelegramBot.BaseMethods
                         await menu.RollBackToMenu(userIdKey, message.Chat.Id, userSession);
                         break;
                         #endregion
-
-                      
+                        //settings => Bank end==========================
                 }
 
 
