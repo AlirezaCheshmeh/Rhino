@@ -49,7 +49,18 @@ namespace Application.Common
                 return false;
             }
         }
-        public IQueryable<T> GetQuery() => Context.Set<T>().AsQueryable();
+        public IQueryable<T> GetQuery(bool includeDeleted = false)
+        {
+            IQueryable<T> query = Context.Set<T>();
+
+            if (!includeDeleted && typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            {
+                query = query.Where(e => !((ISoftDelete)e).IsDeleted);
+            }
+
+            return query.AsQueryable();
+        }
+
 
         public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken deafult) => await Context.Set<T>().ToListAsync();
 
@@ -98,7 +109,18 @@ namespace Application.Common
             }
         }
 
-        public IQueryable<T> GetAsNoTrackingQuery() => Context.Set<T>().AsNoTracking().AsQueryable();
+        public IQueryable<T> GetAsNoTrackingQuery(bool includeDeleted = false)
+        {
+            IQueryable<T> query = Context.Set<T>();
+
+            if (!includeDeleted && typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            {
+                query = query.Where(e => !((ISoftDelete)e).IsDeleted);
+            }
+
+            return query.AsNoTracking();
+        }
+        
 
 
         public DbSet<T> Entities { get; }

@@ -1,28 +1,30 @@
-﻿using Application.Extensions;
+﻿using Application.Common;
+using Application.Extensions;
 using Application.MapperProfile;
-using Application.Services.TelegramServices;
+using Application.Services.TelegramServices.BaseMethods;
+using Application.Services.TelegramServices.ConstVariable;
 using Domain.Entities.Banks;
 using Domain.Entities.Categories;
-using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using TelegramBot.BaseMethods;
-using TelegramBot.ConstMessages;
-using TelegramBot.ConstVariable;
 
-namespace TelegramBot.Configurations
+namespace Application.Services.TelegramServices.Configurations
 {
     public class TransactionConfigs
     {
         private readonly ITelegramBotClient _client;
         private readonly IDynamicButtonsServices _dynamicButtons;
+        private readonly IGenericRepository<Bank> _bankRepository;
+        private readonly IGenericRepository<Category> _categoryRepository;
 
-        public TransactionConfigs(ITelegramBotClient client, IDynamicButtonsServices dynamicButtons)
+        public TransactionConfigs(ITelegramBotClient client, IDynamicButtonsServices dynamicButtons, IGenericRepository<Bank> bankRepository, IGenericRepository<Category> categoryRepository)
         {
             _client = client;
             _dynamicButtons = dynamicButtons;
+            _bankRepository = bankRepository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task SendOutBoundTransactionAsync(long chatId)
@@ -73,8 +75,8 @@ namespace TelegramBot.Configurations
 
         public async Task SendChooseBankAsync(long chatId, long telegramId)
         {
-            await using ApplicationDataContext context = new();
-            var banks = await context.Set<Bank>().Where(z => z.TelegramId == telegramId).Select(x=> new NameValueDTO
+           
+            var banks = await _bankRepository.GetAsNoTrackingQuery().Where(z => z.TelegramId == telegramId).Select(x => new NameValueDTO
             {
                 Id = x.Id,
                 Name = x.Name
@@ -97,12 +99,12 @@ namespace TelegramBot.Configurations
 
         public async Task SendInBoundChooseBankAsync(long chatId, long telegramId)
         {
-            await using ApplicationDataContext context = new();
-            var banks = await context.Set<Bank>().Where(z => z.TelegramId == telegramId).Select(x => new NameValueDTO
+            var banks = await _bankRepository.GetAsNoTrackingQuery().Where(z => z.TelegramId == telegramId).Select(x => new NameValueDTO
             {
                 Id = x.Id,
                 Name = x.Name
             }).ToListAsync();
+
 
             var bankInlineKeyboardButtons = _dynamicButtons.SetDynamicButtons(4, banks, ConstCallBackData.InboundDailyOrSpecificDate.Bank);
             bankInlineKeyboardButtons.Add(new()
@@ -121,14 +123,13 @@ namespace TelegramBot.Configurations
 
         public async Task SendPreviewAsync(long chatId, TransactionDto transaction)
         {
-            using Infrastructure.Database.ApplicationDataContext context = new();
-            var bankName = (await context.Set<Bank>().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
-            var CatName = (await context.Set<Category>().Where(z => z.Id == transaction.CategoryId.Value).FirstOrDefaultAsync()).Name;
-            var message = $"{ConstMessage.OutboundTransactionPreview} \nمبلغ: {NumbersConvertorExtension.ToPersianNumber(transaction.Amount.Value.ToString("N0"))}\n" +
+            var bankName = (await _bankRepository.GetAsNoTrackingQuery().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
+            var CatName = (await _categoryRepository.GetAsNoTrackingQuery().Where(z => z.Id == transaction.CategoryId.Value).FirstOrDefaultAsync()).Name;
+            var message = $"{ConstMessage.OutboundTransactionPreview} \nمبلغ: {transaction.Amount.Value.ToString("N0").ToPersianNumber()}\n" +
                           $"بابت: {transaction.Description}\n" +
                           $"دسته یندی: {CatName}\n" +
                           $"بانک: {bankName}\n" +
-                          $"نوع: {EnumExtensions.ToDisplay(transaction.Type)}\n";
+                          $"نوع: {transaction.Type.ToDisplay()}\n";
             //todo: please get from banks table and replace bank name with bank id,
 
             var inlineKeyboards = new InlineKeyboardMarkup(new[]
@@ -136,7 +137,7 @@ namespace TelegramBot.Configurations
                new[]
                {
                    InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel),
-                   InlineKeyboardButton.WithCallbackData(ConstMessage.Submit,(transaction.Type == Domain.Enums.TransactionType.OutBound?ConstCallBackData.OutboundTransactionPreview.Submit:ConstCallBackData.InboundTransactionPreview.Submit))
+                   InlineKeyboardButton.WithCallbackData(ConstMessage.Submit,transaction.Type == Domain.Enums.TransactionType.OutBound?ConstCallBackData.OutboundTransactionPreview.Submit:ConstCallBackData.InboundTransactionPreview.Submit)
                },
             });
             await _client.SendTextMessageAsync(chatId: chatId, text: message, replyMarkup: inlineKeyboards);

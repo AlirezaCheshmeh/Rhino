@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using Domain.MapperProfile;
+﻿using Application.MapperProfile;
+using AutoMapper;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Application.Services.TelegramServices

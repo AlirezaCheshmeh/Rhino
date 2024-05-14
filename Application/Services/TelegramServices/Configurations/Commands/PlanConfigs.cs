@@ -1,30 +1,29 @@
-﻿using Application.Extensions;
+﻿using Application.Common;
+using Application.Extensions;
+using Application.Services.TelegramServices.ConstVariable;
 using Domain.Entities.Plans;
-using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using TelegramBot.ConstMessages;
-using TelegramBot.ConstVariable;
 
-namespace TelegramBot.Configurations.Commands
+namespace Application.Services.TelegramServices.Configurations.Commands
 {
     public class PlanConfigs
     {
 
         private readonly ITelegramBotClient _client;
+        private readonly IGenericRepository<Plan> _planRepository;
 
-
-        public PlanConfigs(ITelegramBotClient client)
+        public PlanConfigs(ITelegramBotClient client, IGenericRepository<Plan> planRepository)
         {
             _client = client;
+            _planRepository = planRepository;
         }
 
         public async Task SendPlanToUser(long chatId)
         {
-            using ApplicationDataContext context = new();
-            var plans = await context.Set<Plan>().ToListAsync();
+            var plans = await _planRepository.GetAsNoTrackingQuery().ToListAsync();
 
             var inlineKeyboardButtons = new List<List<InlineKeyboardButton>>();
 
@@ -33,7 +32,7 @@ namespace TelegramBot.Configurations.Commands
                 var inlineButtons = new List<InlineKeyboardButton>();
 
                 var amountText = NumbersConvertorExtension.ToPersianNumber(plan.Price.ToString("N0"));
-                var priceButton = InlineKeyboardButton.WithCallbackData($"{amountText} تومان" , $"#");
+                var priceButton = InlineKeyboardButton.WithCallbackData($"{amountText} تومان", $"#");
                 inlineButtons.Add(priceButton);
 
                 var titleButton = InlineKeyboardButton.WithCallbackData(plan.Title, $"#");
@@ -41,7 +40,7 @@ namespace TelegramBot.Configurations.Commands
 
                 inlineKeyboardButtons.Add(inlineButtons);
             }
-            inlineKeyboardButtons.Add(new(){InlineKeyboardButton.WithCallbackData(ConstMessage.BackToMenu, ConstCallBackData.Global.BackToMenu)});
+            inlineKeyboardButtons.Add(new() { InlineKeyboardButton.WithCallbackData(ConstMessage.BackToMenu, ConstCallBackData.Global.BackToMenu) });
             InlineKeyboardMarkup markup = new(inlineKeyboardButtons);
 
             await _client.SendTextMessageAsync(
