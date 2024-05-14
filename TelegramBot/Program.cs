@@ -19,11 +19,11 @@ using Application.Utility;
 using TelegramBot.ConstVariable;
 using TelegramBot.Configurations.Base;
 
-//ensure Database
-await using (ApplicationDataContext context = new())
-{
-    context.Database.EnsureCreated();
-}
+////ensure Database
+//await using (ApplicationDataContext context = new())
+//{
+//    context.Database.EnsureCreated();
+//}
 
 //mapper
 var config = new MapperConfiguration(cfg =>

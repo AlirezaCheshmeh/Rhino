@@ -1,25 +1,45 @@
+using API.Extension;
+using API.Extension.HangfireExtensions;
+using Application.Extensions;
+using Infrastructure.Extensions;
+using Presentation.API.Extension;
+
+
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//add Swagger and auth dependency
+builder.Services.AddSwaggerDependency();
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
+// Add Policy
+builder.Services.AddCors(options => options.AddPolicy("myPol", builder =>
+{
+    builder.SetIsOriginAllowed(x => true)
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials();
+}));
+
+//add hangfire services 
+builder.Services.AddCustomHangFireServer(builder.Configuration);
+//Add Services Related To Application Layer 
+builder.Services.AddApplicationServices(builder.Configuration);
+//Add Services Related To Persistence Infrastructure layer
+builder.Services.AddPersistanceInfrestructurelayarServcies(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseCors("myPol");
+app.IntializeDatabase();
 
+
+
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

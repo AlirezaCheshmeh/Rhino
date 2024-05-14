@@ -22,10 +22,9 @@ namespace Infrastructure.Database.DependencyInjection
 
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDataContext>();
-            optionsBuilder.UseSqlServer("Server=.;Initial Catalog=Clean_ArchitectureDB;Integrated Security=true;TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer("Server=.;Database=RhinoDB;User Id=sa;Password=1;TrustServerCertificate=True; MultipleActiveResultSets=True;");
 
-            //return new ApplicationDataContext(optionsBuilder.Options);
-            return null;
+            return new ApplicationDataContext(optionsBuilder.Options);
         }
     }
 }
