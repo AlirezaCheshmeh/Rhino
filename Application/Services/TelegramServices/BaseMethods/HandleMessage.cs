@@ -7,6 +7,7 @@ using Application.Services.CacheServices;
 using Application.Services.TelegramServices.Configurations;
 using Application.Services.TelegramServices.Configurations.Base;
 using Application.Services.TelegramServices.ConstVariable;
+using Application.Services.TelegramServices.Interfaces;
 using Application.Utility;
 using AutoMapper;
 using Domain.Entities.Banks;
@@ -21,7 +22,7 @@ using static Application.Services.TelegramServices.BaseMethods.HandleUpdate;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
-    public class HandleMessage : BaseConfig
+    public class HandleMessage : IHandleMessage,IScopedDependency
     {
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;

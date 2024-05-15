@@ -34,6 +34,8 @@ namespace API.Extension.HangfireExtensions
 
             // Add the processing server as IHostedService
             services.AddHangfireServer();
+            //add job for TelegramBot
+            services.AddHostedService<TelegramJobSchedule>();
             //add job for remiders
             services.AddHostedService<ConfigJobSchedule>();
             return services;

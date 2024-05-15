@@ -16,29 +16,22 @@ using Domain.Entities.UserPurchases;
 using Domain.Entities.Plans;
 using Application.Cqrs.Commands;
 using AutoMapper;
+using Telegram.Bot.Polling;
+using Application.Services.TelegramServices.Interfaces;
+using Application.Extensions;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
-    public class HandleUpdate : BaseConfig
+    public class HandleUpdate : IHandleUpdates,IScopedDependency
     {
-        private readonly HandleCallbackQuery _handleCallbackQuery;
-        private readonly HandleMessage _handleMessage;
-        private readonly ICacheServices _cache;
+        private readonly IHandleCallbackQuery _handleCallbackQuery;
+        private readonly IHandleMessage _handleMessage;
         private readonly IDistributedCache _disCache;
-        private readonly IDynamicButtonsServices _dynamicButtonsServices;
-        private readonly IGenericRepository<Category> _categoryRepo;
-        private readonly IGenericRepository<Bank> _bankRepo;
-        private readonly IGenericRepository<UserPurchase> _userperchaseRepo;
-        private readonly IGenericRepository<Plan> _palnRepo;
-        private readonly ICommandDispatcher _commandDispatcher;
-        private readonly IMapper _mapper;
-        public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices, IGenericRepository<Category> categoryRepo, IGenericRepository<Bank> bankRepo, IGenericRepository<UserPurchase> userperchaseRepo, IGenericRepository<Plan> palnRepo, ICommandDispatcher commandDispatcher, IMapper mapper)
+
+        public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IHandleCallbackQuery handleCallbackQuery)
         {
-            _handleCallbackQuery = new(cache, disCache, dynamicButtonsServices, commandDispatcher,mapper,bankRepo,categoryRepo,palnRepo,userperchaseRepo);
-            _handleMessage = new(cache, disCache, dynamicButtonsServices,mapper,commandDispatcher,bankRepo,categoryRepo);
-            _cache = cache;
             _disCache = disCache;
-            _mapper = mapper;
+            _handleCallbackQuery = handleCallbackQuery;
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient client, Update update, CancellationToken cancellationToken = default)

@@ -22,10 +22,12 @@ using Domain.Entities.Banks;
 using Domain.Entities.Categories;
 using Domain.Entities.Plans;
 using Domain.Entities.UserPurchases;
+using Application.Services.TelegramServices.Interfaces;
+using Application.Extensions;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
-    public class HandleCallbackQuery : BaseConfig
+    public class HandleCallbackQuery : IHandleCallbackQuery,IScopedDependency
     {
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;

@@ -11,6 +11,7 @@ namespace Application.BackgroundServices
     {
         private readonly IServiceProvider _serviceProvider;
 
+
         public ConfigJobSchedule(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
@@ -23,7 +24,7 @@ namespace Application.BackgroundServices
 
                 await Task.Delay(1);
                 var targetDate = new DateTime(2020, 01, 01, 1, 0, 0);
-                targetDate = targetDate.ToUniversalTime();//11:30 daily
+                targetDate = targetDate.ToUniversalTime();//21:30 daily
                 try
                 {
                     RecurringJob.AddOrUpdate("SendTelegramRemindMessage", () => SendReminderTelegramMessage(), Cron.Daily(Convert.ToInt32(targetDate.ToString("HH")), targetDate.Day));

@@ -9,7 +9,12 @@ using Application.Extensions.Mapper;
 using Domain.DTOs.Shared;
 using Domain.Entities.BaseEntity;
 using Application.BackgroundServices;
+using Microsoft.Extensions.Caching.Distributed;
 using Application.Services.AuthorizeServices;
+using Application.Services.CacheServices;
+using Application.Services.TelegramServices;
+using Application.Services.TelegramServices.Interfaces;
+using Application.Services.TelegramServices.BaseMethods;
 
 namespace Application.Extensions
 {
@@ -32,19 +37,19 @@ namespace Application.Extensions
             var dataAssembly = typeof(AppContext).Assembly;
             var applicationAssmemly = typeof(IRequest<>).Assembly;
             Services.Scan(s =>
-            s.FromAssemblies( entitiesAssembly, dataAssembly, applicationAssmemly)
+            s.FromAssemblies(entitiesAssembly, dataAssembly, applicationAssmemly)
             .AddClasses(c => c.AssignableTo(typeof(IScopedDependency))
             ).AsImplementedInterfaces()
             .WithScopedLifetime());
 
             Services.Scan(s =>
-            s.FromAssemblies( entitiesAssembly, dataAssembly, applicationAssmemly)
+            s.FromAssemblies(entitiesAssembly, dataAssembly, applicationAssmemly)
             .AddClasses(c => c.AssignableTo(typeof(ITransientDependency))
             ).AsImplementedInterfaces()
             .WithScopedLifetime());
 
             Services.Scan(s =>
-            s.FromAssemblies( entitiesAssembly, dataAssembly, applicationAssmemly)
+            s.FromAssemblies(entitiesAssembly, dataAssembly, applicationAssmemly)
             .AddClasses(c => c.AssignableTo(typeof(ISingletonDependency))
             ).AsImplementedInterfaces()
             .WithScopedLifetime());
@@ -55,6 +60,10 @@ namespace Application.Extensions
             Services.AddScoped<IServiceResponse, ServiceRespnse>();
             //add Token Services
             Services.AddScoped<IToken, Token>();
+
+            
+
+
 
 
             return Services;
