@@ -26,15 +26,15 @@ namespace Application.BackgroundServices
     public class TelegramJobSchedule : BackgroundService
     {
         private readonly IHandleUpdates _handleUpdates;
+        private readonly ITelegramBotClient _telegramBotClient;
         private readonly IDistributedCache _distributedCache;
-        private readonly IConfiguration _configuration;
 
-        public TelegramJobSchedule(IHandleUpdates handleUpdates, IDistributedCache distributedCache, IConfiguration configuration)
+
+        public TelegramJobSchedule(IHandleUpdates handleUpdates, IDistributedCache distributedCache, ITelegramBotClient telegramBotClient)
         {
             _handleUpdates = handleUpdates;
             _distributedCache = distributedCache;
-            _configuration = configuration;
-
+            _telegramBotClient = telegramBotClient;
         }
 
         protected async override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,15 +42,14 @@ namespace Application.BackgroundServices
             CacheExtension.Initialize(_distributedCache);
             HandleError handleError = new();
 
-            var client = new TelegramBotClient(_configuration["TelegramSettings:TelegramKey"]);
-            await Command.SetBotCommands(client);
-            await client.DeleteWebhookAsync();
+            await Command.SetBotCommands(_telegramBotClient);
+            await _telegramBotClient.DeleteWebhookAsync();
             using var cts = new CancellationTokenSource();
 
             var receiverOptions = new ReceiverOptions { AllowedUpdates = { } };
 
-            client.StartReceiving(_handleUpdates.HandleUpdateAsync, handleError.HandleerrorAsync, receiverOptions, cts.Token);
-            var me = await client.GetMeAsync();
+            _telegramBotClient.StartReceiving(_handleUpdates.HandleUpdateAsync, handleError.HandleerrorAsync, receiverOptions, cts.Token);
+            var me = await _telegramBotClient.GetMeAsync();
         }
     }
 }

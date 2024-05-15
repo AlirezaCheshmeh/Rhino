@@ -15,6 +15,8 @@ using Application.Services.CacheServices;
 using Application.Services.TelegramServices;
 using Application.Services.TelegramServices.Interfaces;
 using Application.Services.TelegramServices.BaseMethods;
+using Microsoft.Extensions.Options;
+using Telegram.Bot;
 
 namespace Application.Extensions
 {
@@ -61,7 +63,11 @@ namespace Application.Extensions
             //add Token Services
             Services.AddScoped<IToken, Token>();
 
-            
+            Services.AddHttpClient<ITelegramBotClient, TelegramBotClient>((httpClient, sp) =>
+            {
+                var telegramSettings = sp.GetRequiredService<IOptions<TelegramSettings>>().Value;
+                return new TelegramBotClient(telegramSettings.TelegramKey, httpClient);
+            });
 
 
 
