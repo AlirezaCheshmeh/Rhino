@@ -1,5 +1,6 @@
-﻿using AutoMapper;
-using Domain.MapperProfile;
+﻿using Application.Extensions;
+using Application.MapperProfile;
+using AutoMapper;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Application.Services.TelegramServices
@@ -10,7 +11,7 @@ namespace Application.Services.TelegramServices
         List<List<InlineKeyboardButton>> SetDynamicButtons<T>(int RowsCount, List<T> list, string CallbackData);
     }
 
-    public class DynamicButtonsServices : IDynamicButtonsServices
+    public class DynamicButtonsServices : IDynamicButtonsServices,IScopedDependency
     {
         private readonly IMapper _mapper;
 

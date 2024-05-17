@@ -12,7 +12,7 @@ using Domain.Entities.BaseEntity;
 
 namespace Application.Common
 {
-    public class GenericRepository<T> : IGenericRepository<T> where T : class
+    public class GenericRepository<T> :IDisposable,IGenericRepository<T> where T : class
     {
         protected readonly IApplicationDataContext Context;
 
@@ -49,7 +49,18 @@ namespace Application.Common
                 return false;
             }
         }
-        public IQueryable<T> GetQuery() => Context.Set<T>().AsQueryable();
+        public IQueryable<T> GetQuery(bool includeDeleted = false)
+        {
+            IQueryable<T> query = Context.Set<T>();
+
+            if (!includeDeleted && typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            {
+                query = query.Where(e => !((ISoftDelete)e).IsDeleted);
+            }
+
+            return query.AsQueryable();
+        }
+
 
         public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken deafult) => await Context.Set<T>().ToListAsync();
 
@@ -98,7 +109,18 @@ namespace Application.Common
             }
         }
 
-        public IQueryable<T> GetAsNoTrackingQuery() => Context.Set<T>().AsNoTracking().AsQueryable();
+        public IQueryable<T> GetAsNoTrackingQuery(bool includeDeleted = false)
+        {
+            IQueryable<T> query = Context.Set<T>();
+
+            if (!includeDeleted && typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            {
+                query = query.Where(e => !((ISoftDelete)e).IsDeleted);
+            }
+
+            return query.AsNoTracking();
+        }
+        
 
 
         public DbSet<T> Entities { get; }
@@ -279,6 +301,10 @@ namespace Application.Common
                 throw new InvalidOperationException($"{nameof(entity)} does not have interface {nameof(ISoftDelete)}");
             }
             await UpdateAsync(entity, cancellationToken, saveNow);
+        }
+
+        public void Dispose()
+        {
         }
         #endregion
     }

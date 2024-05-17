@@ -5,7 +5,7 @@ using Telegram.Bot;
 using AutoMapper;
 using Telegram.Bot.Types.ReplyMarkups;
 using Application.Services.TelegramServices;
-using Domain.MapperProfile;
+using Application.MapperProfile;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.ConstMessages;
 using TelegramBot.ConstVariable;
@@ -24,52 +24,52 @@ namespace TelegramBot.Configurations
             _dynamicButtonsServices = dynamicButtonsServices;
         }
 
-        public async Task SendInBoundCategoriesToUser(long chatId)
-        {
-            await using ApplicationDataContext context = new();
-            var cats = await context.Set<Category>().Select(z => new NameValueDTO
-            {
-                Name = z.Name,
-                Id = z.Id
-            }).ToListAsync();
-            var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, InboundDailyCategory.Category);
-            inlineCategoryKeyboards.Add(new()
-            {
-                InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
-                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+        //public async Task SendInBoundCategoriesToUser(long chatId)
+        //{
+        //    await using ApplicationDataContext context = new();
+        //    var cats = await context.Set<Category>().Select(z => new NameValueDTO
+        //    {
+        //        Name = z.Name,
+        //        Id = z.Id
+        //    }).ToListAsync();
+        //    var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, InboundDailyCategory.Category);
+        //    inlineCategoryKeyboards.Add(new()
+        //    {
+        //        InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
+        //        InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
 
-            });
-            var inlineKeyboards = new InlineKeyboardMarkup(inlineCategoryKeyboards);
-            await _client.SendTextMessageAsync(
-          chatId: chatId,
-          text: ConstMessage.ChooseCategory,
-          parseMode:ParseMode.Html,
-          replyMarkup: inlineKeyboards);
-        }
+        //    });
+        //    var inlineKeyboards = new InlineKeyboardMarkup(inlineCategoryKeyboards);
+        //    await _client.SendTextMessageAsync(
+        //  chatId: chatId,
+        //  text: ConstMessage.ChooseCategory,
+        //  parseMode:ParseMode.Html,
+        //  replyMarkup: inlineKeyboards);
+        //}
 
 
 
-        public async Task SendOutBoundCategoriesToUser(long chatId)
-        {
-            await using ApplicationDataContext context = new();
-            var cats = await context.Set<Category>().Select(z => new NameValueDTO
-            {
-                Name = z.Name,
-                Id = z.Id
-            }).ToListAsync();
-            var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, DailyCategory.Category);
-            inlineCategoryKeyboards.Add(new()
-            {
-                InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
-                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+        //public async Task SendOutBoundCategoriesToUser(long chatId)
+        //{
+        //    await using ApplicationDataContext context = new();
+        //    var cats = await context.Set<Category>().Select(z => new NameValueDTO
+        //    {
+        //        Name = z.Name,
+        //        Id = z.Id
+        //    }).ToListAsync();
+        //    var inlineCategoryKeyboards = _dynamicButtonsServices.SetDynamicButtons<NameValueDTO>(4, cats, DailyCategory.Category);
+        //    inlineCategoryKeyboards.Add(new()
+        //    {
+        //        InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
+        //        InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
 
-            });
-            var inlineKeyboards = new InlineKeyboardMarkup(inlineCategoryKeyboards);
-            await _client.SendTextMessageAsync(
-          chatId: chatId,
-          text: ConstMessage.ChooseCategory,
-          parseMode: ParseMode.Html,
-          replyMarkup: inlineKeyboards);
-        }
+        //    });
+        //    var inlineKeyboards = new InlineKeyboardMarkup(inlineCategoryKeyboards);
+        //    await _client.SendTextMessageAsync(
+        //  chatId: chatId,
+        //  text: ConstMessage.ChooseCategory,
+        //  parseMode: ParseMode.Html,
+        //  replyMarkup: inlineKeyboards);
+        //}
     }
 }

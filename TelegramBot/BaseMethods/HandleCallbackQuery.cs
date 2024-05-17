@@ -73,7 +73,7 @@ namespace TelegramBot.BaseMethods
                     //account start==================
                     #region BuyAccount
                     case CommandState.BuyAccount:
-                        await planConfig.SendPlanToUser(callbackQuery.Message.Chat.Id);
+                        //await planConfig.SendPlanToUser(callbackQuery.Message.Chat.Id);
                         break;
                     #endregion
                     //account end====================
@@ -98,7 +98,7 @@ namespace TelegramBot.BaseMethods
                         var transaction = new TransactionDto();
                         transaction.Type = TransactionType.OutBound;
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, transaction);
-                        await categoryMenu.SendOutBoundCategoriesToUser(callbackQuery.Message.Chat.Id);
+                        //await categoryMenu.SendOutBoundCategoriesToUser(callbackQuery.Message.Chat.Id);
                         break;
                     #endregion
 
@@ -117,7 +117,7 @@ namespace TelegramBot.BaseMethods
                         {
                             cacheDate.CategoryId = catId;
                             await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, cacheDate);
-                            await transactionMenu.SendChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
+                           // await transactionMenu.SendChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
                         }
 
                         break;
@@ -162,20 +162,20 @@ namespace TelegramBot.BaseMethods
                         }
                         else
                         {
-                            await using (ApplicationDataContext context = new())
-                            {
-                                var newTransaction = new Transaction
-                                {
-                                    Amount = transactionSubmitted.Amount!.Value,
-                                    Type = TransactionType.OutBound,
-                                    Description = transactionSubmitted.Description,
-                                    BankId = transactionSubmitted.BankId,
-                                    MessageId = callbackQuery.Message.MessageId,
-                                    TelegramId = callbackQuery.From.Id
-                                };
-                                await context.Set<Transaction>().AddAsync(newTransaction);
-                                await context.SaveChangesAsync();
-                            }
+                            //await using (ApplicationDataContext context = new())
+                            //{
+                            //    var newTransaction = new Transaction
+                            //    {
+                            //        Amount = transactionSubmitted.Amount!.Value,
+                            //        Type = TransactionType.OutBound,
+                            //        Description = transactionSubmitted.Description,
+                            //        BankId = transactionSubmitted.BankId,
+                            //        MessageId = callbackQuery.Message.MessageId,
+                            //        TelegramId = callbackQuery.From.Id
+                            //    };
+                            //    await context.Set<Transaction>().AddAsync(newTransaction);
+                            //    await context.SaveChangesAsync();
+                            //}
                             var descriptionMessage = await client
                                 .SendTextMessageAsync(callbackQuery.Message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);
                             userSession.MessageIds.Add(descriptionMessage.MessageId);
@@ -221,7 +221,7 @@ namespace TelegramBot.BaseMethods
                         var Inboundtransaction = new TransactionDto();
                         Inboundtransaction.Type = TransactionType.InBound;
                         var res = await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, Inboundtransaction);
-                        await categoryMenu.SendInBoundCategoriesToUser(callbackQuery.Message.Chat.Id);
+                       // await categoryMenu.SendInBoundCategoriesToUser(callbackQuery.Message.Chat.Id);
                         break;
                     #endregion
 
@@ -240,7 +240,7 @@ namespace TelegramBot.BaseMethods
                         {
                             InboundcacheDate.CategoryId = InboundcatId;
                             await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, InboundcacheDate);
-                            await transactionMenu.SendInBoundChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
+                            //await transactionMenu.SendInBoundChooseBankAsync(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
                         }
 
                         break;
@@ -286,20 +286,20 @@ namespace TelegramBot.BaseMethods
                         else
                         {
 
-                            await using (ApplicationDataContext context = new())
-                            {
-                                var newTransaction = new Transaction
-                                {
-                                    Amount = InboundtransactionSubmitted.Amount!.Value,
-                                    Type = InboundtransactionSubmitted.Type,
-                                    Description = InboundtransactionSubmitted.Description,
-                                    BankId = InboundtransactionSubmitted.BankId,
-                                    MessageId = callbackQuery.Message.MessageId,
-                                    TelegramId = callbackQuery.From.Id,
-                                };
-                                await context.Set<Transaction>().AddAsync(newTransaction);
-                                await context.SaveChangesAsync();
-                            }
+                            //await using (ApplicationDataContext context = new())
+                            //{
+                            //    var newTransaction = new Transaction
+                            //    {
+                            //        Amount = InboundtransactionSubmitted.Amount!.Value,
+                            //        Type = InboundtransactionSubmitted.Type,
+                            //        Description = InboundtransactionSubmitted.Description,
+                            //        BankId = InboundtransactionSubmitted.BankId,
+                            //        MessageId = callbackQuery.Message.MessageId,
+                            //        TelegramId = callbackQuery.From.Id,
+                            //    };
+                            //    await context.Set<Transaction>().AddAsync(newTransaction);
+                            //    await context.SaveChangesAsync();
+                            //}
                             var InbounddescriptionMessage = await client
                                 .SendTextMessageAsync(callbackQuery.Message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);
                             userSession.MessageIds.Add(InbounddescriptionMessage.MessageId);

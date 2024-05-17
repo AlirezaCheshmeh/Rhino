@@ -122,7 +122,7 @@ namespace TelegramBot.BaseMethods
 
                             transaction.Description = message.Text;
                             await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, transaction);
-                            await transactionMenu.SendPreviewAsync(message.Chat.Id, transaction);
+                           // await transactionMenu.SendPreviewAsync(message.Chat.Id, transaction);
                         }
                         break;
                     #endregion
@@ -189,7 +189,7 @@ namespace TelegramBot.BaseMethods
 
                             Inboundtransaction.Description = message.Text;
                             await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, Inboundtransaction);
-                            await transactionMenu.SendPreviewAsync(message.Chat.Id, Inboundtransaction);
+                           // await transactionMenu.SendPreviewAsync(message.Chat.Id, Inboundtransaction);
                         }
                         break;
                     #endregion
@@ -206,11 +206,11 @@ namespace TelegramBot.BaseMethods
                             SVG = "",
                             TelegramId = message.From.Id
                         };
-                        using (Infrastructure.Database.ApplicationDataContext context = new())
-                        {
-                            await context.Set<Bank>().AddAsync(bank);
-                            await context.SaveChangesAsync();
-                        }
+                        //using (Infrastructure.Database.ApplicationDataContext context = new())
+                        //{
+                        //    await context.Set<Bank>().AddAsync(bank);
+                        //    await context.SaveChangesAsync();
+                        //}
                         var BankInsertedMessage = await client
                            .SendTextMessageAsync(message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);
                         userSession.MessageIds.Add(BankInsertedMessage.MessageId);

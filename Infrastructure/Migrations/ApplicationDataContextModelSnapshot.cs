@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Infrestructure.Persistance.Migrations
+namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDataContext))]
     partial class ApplicationDataContextModelSnapshot : ModelSnapshot
@@ -17,58 +17,244 @@ namespace Infrestructure.Persistance.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("ProductVersion", "7.0.18")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Core.Domain.Entities.Company", b =>
+            modelBuilder.Entity("Domain.Entities.Banks.Bank", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Branch")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SVG")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("TelegramId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Banks", "Bank");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Categories.Category", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("parentId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("parentId");
+
+                    b.ToTable("Categories", "Category");
+                });
+
+            modelBuilder.Entity("Domain.Entities.DiscountCodes.DiscountCode", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("PlanId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UseCount")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("DiscountCodes", "Plan");
+                });
+
+            modelBuilder.Entity("Domain.Entities.EventPays.EventPay", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
-                    b.HasKey("Id");
-
-                    b.ToTable("Companies", "Companies");
-                });
-
-            modelBuilder.Entity("Core.Domain.Entities.Product", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreateTime")
+                    b.Property<DateTime>("PayDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("RemindMe")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("TelegramId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
-
-                    b.ToTable("Products", "Products");
+                    b.ToTable("EventPays", "Event");
                 });
 
-            modelBuilder.Entity("Core.Domain.Entities.Role.Role", b =>
+            modelBuilder.Entity("Domain.Entities.Plans.Plan", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Plans", "Plan");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Reminders.Reminder", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsExpire")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRemindMeAgain")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("RemindAgainDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("RemindDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("TelegramId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Reminders", "Remind");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Roles.Role", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -97,27 +283,75 @@ namespace Infrestructure.Persistance.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2024, 3, 23, 13, 30, 40, 844, DateTimeKind.Local).AddTicks(8335),
+                            CreatedAt = new DateTime(2024, 5, 14, 23, 16, 41, 8, DateTimeKind.Local).AddTicks(8198),
                             IsDeleted = false,
                             RoleName = "SuperAdmin"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2024, 3, 23, 13, 30, 40, 844, DateTimeKind.Local).AddTicks(8360),
+                            CreatedAt = new DateTime(2024, 5, 14, 23, 16, 41, 8, DateTimeKind.Local).AddTicks(8224),
                             IsDeleted = false,
                             RoleName = "Admin"
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2024, 3, 23, 13, 30, 40, 844, DateTimeKind.Local).AddTicks(8362),
+                            CreatedAt = new DateTime(2024, 5, 14, 23, 16, 41, 8, DateTimeKind.Local).AddTicks(8227),
                             IsDeleted = false,
                             RoleName = "User"
                         });
                 });
 
-            modelBuilder.Entity("Entities.UsersEntity.User", b =>
+            modelBuilder.Entity("Domain.Entities.Transactions.Transaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long?>("BankId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TelegramId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BankId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("Transactions", "Transaction");
+                });
+
+            modelBuilder.Entity("Domain.Entities.UserPurchases.UserPurchase", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -125,29 +359,66 @@ namespace Infrestructure.Persistance.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("About")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<int>("Age")
-                        .HasColumnType("int");
+                    b.Property<decimal>("CustomerProfit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("AvatarImage")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<long?>("DisCountCodeId")
+                        .IsRequired()
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("OffPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PayedPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PlanBasePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<long>("PlanId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TelegramId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ValidDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisCountCodeId");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("UserPerchases", "Plan");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Users.User", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Discord")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FaceBook")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTimeOffset?>("FirstLoginDate")
-                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -155,13 +426,6 @@ namespace Infrestructure.Persistance.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
-
-                    b.Property<string>("GoogleAuthenticatorSecret")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
@@ -170,30 +434,18 @@ namespace Infrestructure.Persistance.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("IsGoogleAuthenticatorEnable")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsReadRules")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LastLoginDate")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Mobile")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("PasswordHash")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<byte[]>("PasswordSalt")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<string>("RefreshToken")
@@ -205,11 +457,8 @@ namespace Infrestructure.Persistance.Migrations
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Telegram")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<byte[]>("TemporaryCodeForGoogleAuthenticator")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<long?>("TelegramId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -229,20 +478,65 @@ namespace Infrestructure.Persistance.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Core.Domain.Entities.Product", b =>
+            modelBuilder.Entity("Domain.Entities.Categories.Category", b =>
                 {
-                    b.HasOne("Core.Domain.Entities.Company", "Company")
-                        .WithMany("Products")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasOne("Domain.Entities.Categories.Category", "Parent")
+                        .WithMany()
+                        .HasForeignKey("parentId");
 
-                    b.Navigation("Company");
+                    b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("Entities.UsersEntity.User", b =>
+            modelBuilder.Entity("Domain.Entities.DiscountCodes.DiscountCode", b =>
                 {
-                    b.HasOne("Core.Domain.Entities.Role.Role", "Role")
+                    b.HasOne("Domain.Entities.Plans.Plan", "Plan")
+                        .WithMany("DiscountCodes")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Transactions.Transaction", b =>
+                {
+                    b.HasOne("Domain.Entities.Banks.Bank", "Bank")
+                        .WithMany("Transactions")
+                        .HasForeignKey("BankId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Domain.Entities.Categories.Category", "Category")
+                        .WithMany("Transactions")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Bank");
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Domain.Entities.UserPurchases.UserPurchase", b =>
+                {
+                    b.HasOne("Domain.Entities.DiscountCodes.DiscountCode", "DiscountCode")
+                        .WithMany("UserPurchases")
+                        .HasForeignKey("DisCountCodeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Plans.Plan", "Plan")
+                        .WithMany("UserPurchases")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("DiscountCode");
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Users.User", b =>
+                {
+                    b.HasOne("Domain.Entities.Roles.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -251,12 +545,29 @@ namespace Infrestructure.Persistance.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("Core.Domain.Entities.Company", b =>
+            modelBuilder.Entity("Domain.Entities.Banks.Bank", b =>
                 {
-                    b.Navigation("Products");
+                    b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("Core.Domain.Entities.Role.Role", b =>
+            modelBuilder.Entity("Domain.Entities.Categories.Category", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("Domain.Entities.DiscountCodes.DiscountCode", b =>
+                {
+                    b.Navigation("UserPurchases");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Plans.Plan", b =>
+                {
+                    b.Navigation("DiscountCodes");
+
+                    b.Navigation("UserPurchases");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Roles.Role", b =>
                 {
                     b.Navigation("Users");
                 });

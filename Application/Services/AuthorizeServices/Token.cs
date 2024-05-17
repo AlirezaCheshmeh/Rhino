@@ -23,7 +23,7 @@ namespace Application.Services.AuthorizeServices
         public Task<TokenDTO> Get(User user, CancellationToken cancellationToken = default);
         public Task<IServiceResponse<TokenDTO>> RefreshAsync(RefreshTokenDTO tokenApiModel, CancellationToken cancellationToken = default);
     }
-    public class Token : IScopedDependency, IToken
+    public class Token : IToken
     {
         #region Constructor
         private readonly IConfiguration configuration;

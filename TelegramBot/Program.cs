@@ -19,11 +19,11 @@ using Application.Utility;
 using TelegramBot.ConstVariable;
 using TelegramBot.Configurations.Base;
 
-//ensure Database
-await using (ApplicationDataContext context = new())
-{
-    context.Database.EnsureCreated();
-}
+////ensure Database
+//await using (ApplicationDataContext context = new())
+//{
+//    context.Database.EnsureCreated();
+//}
 
 //mapper
 var config = new MapperConfiguration(cfg =>
@@ -44,7 +44,7 @@ var serviceCollection = new ServiceCollection()
     .AddScoped<ICacheServices, CacheServices>()
     .AddHostedService<ConfigJobSchedule>()
     .AddScoped<IServiceProvider, ServiceProvider>()
-    .AddScoped<IApplicationDataContext, ApplicationDataContext>()
+    //.AddScoped<IApplicationDataContext, ApplicationDataContext>()
     .AddStackExchangeRedisCache(options =>
     {
         options.Configuration = "localhost:6379"; // Redis connection string

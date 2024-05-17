@@ -12,5 +12,6 @@ namespace Application.Mediator.Banks.DTOs
         public string Name { get; set; }
         public string SVG { get; set; }
         public string Branch { get; set; }
+        public long TelegramId { get; set; }
     }
 }

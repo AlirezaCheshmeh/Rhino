@@ -11,9 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure", "Infrastru
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{35603643-AA1C-41E1-96AC-7685DE342C22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelegramBot", "TelegramBot\TelegramBot.csproj", "{5969C284-1303-4243-8E55-94BA6EE6F55B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TelegramBot", "TelegramBot\TelegramBot.csproj", "{5969C284-1303-4243-8E55-94BA6EE6F55B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{AAA28724-DB7B-4FBC-9FA0-8A860BF28FC4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API", "API\API.csproj", "{277F4E85-932D-40D4-8A5C-A756D66641E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,17 +37,17 @@ Global
 		{5969C284-1303-4243-8E55-94BA6EE6F55B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5969C284-1303-4243-8E55-94BA6EE6F55B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5969C284-1303-4243-8E55-94BA6EE6F55B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AAA28724-DB7B-4FBC-9FA0-8A860BF28FC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AAA28724-DB7B-4FBC-9FA0-8A860BF28FC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AAA28724-DB7B-4FBC-9FA0-8A860BF28FC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AAA28724-DB7B-4FBC-9FA0-8A860BF28FC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{277F4E85-932D-40D4-8A5C-A756D66641E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{277F4E85-932D-40D4-8A5C-A756D66641E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{277F4E85-932D-40D4-8A5C-A756D66641E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{277F4E85-932D-40D4-8A5C-A756D66641E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5969C284-1303-4243-8E55-94BA6EE6F55B} = {35603643-AA1C-41E1-96AC-7685DE342C22}
-		{AAA28724-DB7B-4FBC-9FA0-8A860BF28FC4} = {35603643-AA1C-41E1-96AC-7685DE342C22}
+		{277F4E85-932D-40D4-8A5C-A756D66641E1} = {35603643-AA1C-41E1-96AC-7685DE342C22}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0DE0D6D8-0122-4A48-837E-143CC5DCC6FB}

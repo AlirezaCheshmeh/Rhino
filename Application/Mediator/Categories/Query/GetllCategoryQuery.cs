@@ -29,8 +29,8 @@ namespace Application.Mediator.Categories.Query
                     Name = z.Name,
                     parentId = (long)z.parentId,
                     ParentName = z.Parent.Name
-                }).Skip((request.PageNumber - 1) * request.Count).Take(request.Count).ToListAsync(cancellationToken: cancellationToken);
-                var totalCount = await repo.CountAsync(cancellationToken: cancellationToken);
+                }).Skip((request.PageNumber - 1) * request.Count).Take(request.Count).ToListAsync();
+                var totalCount = await repo.CountAsync();
                 return new ServiceRespnse<List<CategoryDTO>>().OK(cats, totalCount);
             }
         }

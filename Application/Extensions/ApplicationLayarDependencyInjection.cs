@@ -8,6 +8,15 @@ using Application.SiteSetting;
 using Application.Extensions.Mapper;
 using Domain.DTOs.Shared;
 using Domain.Entities.BaseEntity;
+using Application.BackgroundServices;
+using Microsoft.Extensions.Caching.Distributed;
+using Application.Services.AuthorizeServices;
+using Application.Services.CacheServices;
+using Application.Services.TelegramServices;
+using Application.Services.TelegramServices.Interfaces;
+using Application.Services.TelegramServices.BaseMethods;
+using Microsoft.Extensions.Options;
+using Telegram.Bot;
 
 namespace Application.Extensions
 {
@@ -15,8 +24,6 @@ namespace Application.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection Services, IConfiguration configuration)
         {
-            //ad settings
-            Services.AddSettings(configuration);
 
             //Add AutoMapper Services
             Services.AddMapperServcies();
@@ -28,34 +35,47 @@ namespace Application.Extensions
             });
 
             //add scope transient singletone 
-            var commonAssembly = typeof(SiteSettings).Assembly;
             var entitiesAssembly = typeof(IEntity).Assembly;
             var dataAssembly = typeof(AppContext).Assembly;
             var applicationAssmemly = typeof(IRequest<>).Assembly;
             Services.Scan(s =>
-            s.FromAssemblies(commonAssembly, entitiesAssembly, dataAssembly, applicationAssmemly)
+            s.FromAssemblies(entitiesAssembly, dataAssembly, applicationAssmemly)
             .AddClasses(c => c.AssignableTo(typeof(IScopedDependency))
             ).AsImplementedInterfaces()
             .WithScopedLifetime());
 
             Services.Scan(s =>
-            s.FromAssemblies(commonAssembly, entitiesAssembly, dataAssembly, applicationAssmemly)
+            s.FromAssemblies(entitiesAssembly, dataAssembly, applicationAssmemly)
             .AddClasses(c => c.AssignableTo(typeof(ITransientDependency))
             ).AsImplementedInterfaces()
             .WithScopedLifetime());
 
             Services.Scan(s =>
-            s.FromAssemblies(commonAssembly, entitiesAssembly, dataAssembly, applicationAssmemly)
+            s.FromAssemblies(entitiesAssembly, dataAssembly, applicationAssmemly)
             .AddClasses(c => c.AssignableTo(typeof(ISingletonDependency))
             ).AsImplementedInterfaces()
             .WithScopedLifetime());
 
             //add cqrs 
             Services.AddCqrs();
-
             //add service response
             Services.AddScoped<IServiceResponse, ServiceRespnse>();
-            return Services.AddScoped(typeof(IPaymentZarinPalServiceResponse<>), typeof(PaymentZarinPalServiceResponse<>));
+            //add Token Services
+            Services.AddScoped<IToken, Token>();
+
+            Services.AddScoped<ICacheServices,CacheServices>();
+            Services.AddScoped<IHandleUpdates, HandleUpdate>();
+            Services.AddScoped<IHandleCallbackQuery, HandleCallbackQuery>();
+            Services.AddScoped<IHandleMessage, HandleMessage>();
+            Services.AddScoped<IDynamicButtonsServices,DynamicButtonsServices>();
+            Services.AddHttpClient<ITelegramBotClient, TelegramBotClient>((httpClient, sp) =>
+            {
+                var telegramSettings = sp.GetRequiredService<IOptions<TelegramSettings>>().Value;
+                return new TelegramBotClient(telegramSettings.TelegramKey, httpClient);
+            });
+
+
+
 
             return Services;
         }

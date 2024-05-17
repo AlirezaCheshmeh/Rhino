@@ -15,15 +15,9 @@ namespace Infrastructure.Database
     public class ApplicationDataContext : DbContext, Application.Database.IApplicationDataContext
     {
 
-        //public ApplicationDataContext(DbContextOptions<ApplicationDataContext> options):base(options)
-        //{
-
-        //}
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        public ApplicationDataContext(DbContextOptions<ApplicationDataContext> options) : base(options)
         {
-            optionsBuilder.UseSqlServer("Server=.;Database=Rhino;Integrated Security =True;TrustServerCertificate=True; MultipleActiveResultSets=True;");
-            base.OnConfiguring(optionsBuilder);
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

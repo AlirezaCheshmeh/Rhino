@@ -1,39 +1,31 @@
 ﻿using Application.Common;
 using Application.Cqrs.Commands;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using Domain.DTOs.Shared;
 using Domain.Entities.Transactions;
+using Application.Mediator.Transactions.DTOs;
+using AutoMapper;
 
 namespace Application.Mediator.Transactions.Command
 {
     public class InsertTransactionCommand : ICommand<ServiceRespnse>
     {
-        public decimal Amount { get; set; }
-        public string? Description { get; set; }
-        public long TelegramId { get; set; }
+        public TransactionDTO dto { get; set; }
 
         public class InsertTransactionCommandHandler : ICommandHandler<InsertTransactionCommand, ServiceRespnse>
         {
             private readonly IGenericRepository<Transaction> _transactionRepository;
+            private readonly IMapper _mapper;
 
-            public InsertTransactionCommandHandler(IGenericRepository<Transaction> transactionRepository)
+            public InsertTransactionCommandHandler(IGenericRepository<Transaction> transactionRepository, IMapper mapper)
             {
                 _transactionRepository = transactionRepository;
+                _mapper = mapper;
             }
 
             public async Task<ServiceRespnse> Handle(InsertTransactionCommand request, CancellationToken cancellationToken)
             {
-                await _transactionRepository.AddAsync(new Transaction
-                {
-                    Amount = request.Amount,
-                    Description = request.Description,
-                    TelegramId = request.TelegramId
-                }, cancellationToken);
+                var transaction = _mapper.Map<Transaction>(request.dto);
+                await _transactionRepository.AddAsync(transaction, cancellationToken);
                 return new ServiceRespnse().OK();
             }
         }

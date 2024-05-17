@@ -14,15 +14,16 @@ namespace TelegramBot.Configurations
     {
         public async Task<bool> CheckUserActiveAccount(long telegramId)
         {
-            using (ApplicationDataContext context = new())
-            {
-                var userPerchaseExist = await context.Set<UserPurchase>().AnyAsync(z => z.TelegramId == telegramId && z.ValidDate.Date > DateTime.Now.Date);
-                if (userPerchaseExist)
-                    return true;
-                else
-                    return false;
+            //using (ApplicationDataContext context = new())
+            //{
+            //    var userPerchaseExist = await context.Set<UserPurchase>().AnyAsync(z => z.TelegramId == telegramId && z.ValidDate.Date > DateTime.Now.Date);
+            //    if (userPerchaseExist)
+            //        return true;
+            //    else
+            //        return false;
 
-            }
+            //}
+            throw new NotImplementedException();
 
         }
     }

@@ -19,6 +19,8 @@ namespace Infrastructure.Extensions
             //Add UnitOfWork Services
             Database.DependencyInjection.DatabaseDependencyInjection.AddUnitOfWorkServices(Servcies);
 
+            //Add Repositories Services
+            Database.DependencyInjection.DatabaseDependencyInjection.AddRepositoriesDependency(Servcies);
 
             return Servcies;
         }
