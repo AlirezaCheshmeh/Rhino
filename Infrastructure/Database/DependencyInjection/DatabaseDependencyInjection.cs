@@ -29,7 +29,7 @@ namespace Infrastructure.Database.DependencyInjection
             Services.AddDbContext<ApplicationDataContext>(options =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("LocalConnection"));
-            });
+            }, ServiceLifetime.Scoped);
 
             return Services;
         }

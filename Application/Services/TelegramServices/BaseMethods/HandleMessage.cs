@@ -14,6 +14,7 @@ using Domain.Entities.Banks;
 using Domain.Entities.Categories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -22,7 +23,7 @@ using static Application.Services.TelegramServices.BaseMethods.HandleUpdate;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
-    public class HandleMessage : IHandleMessage,IScopedDependency
+    public class HandleMessage : IHandleMessage, IScopedDependency
     {
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;
@@ -31,7 +32,8 @@ namespace Application.Services.TelegramServices.BaseMethods
         private readonly ICommandDispatcher _commandDispatcher;
         private readonly IGenericRepository<Bank> _bankRepo;
         private readonly IGenericRepository<Category> _categoryRepo;
-        public HandleMessage(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices, IMapper mapper, ICommandDispatcher commandDispatcher, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo)
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        public HandleMessage(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices, IMapper mapper, ICommandDispatcher commandDispatcher, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo, IServiceScopeFactory serviceScopeFactory)
         {
             _cache = cache;
             _disCache = disCache;
@@ -40,14 +42,17 @@ namespace Application.Services.TelegramServices.BaseMethods
             _commandDispatcher = commandDispatcher;
             _bankRepo = bankRepo;
             _categoryRepo = categoryRepo;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async Task HandleMessageAsync(ITelegramBotClient client, Message message, UserSession userSession)
         {
+
             MenuConfigs menu = new(client, _disCache);
-            TransactionConfigs transactionMenu = new(client, _dynamicButtonsServices,_bankRepo,_categoryRepo);
-            CategoryConfigs catMenu = new(client, _dynamicButtonsServices,_categoryRepo);
+            TransactionConfigs transactionMenu = new(client, _dynamicButtonsServices, _bankRepo, _categoryRepo);
+            CategoryConfigs catMenu = new(client, _dynamicButtonsServices, _categoryRepo, _serviceScopeFactory);
             GlobalConfigs globalMessage = new(client);
+
             try
             {
                 if (message.From is null)
@@ -218,7 +223,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                             SVG = "",
                             TelegramId = message.From.Id
                         });
-                        await _commandDispatcher.SendAsync(new InsertBankCommand { dto = mappedBank },cancellationToken:default);
+                        await _commandDispatcher.SendAsync(new InsertBankCommand { dto = mappedBank }, cancellationToken: default);
 
                         var BankInsertedMessage = await client
                            .SendTextMessageAsync(message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);

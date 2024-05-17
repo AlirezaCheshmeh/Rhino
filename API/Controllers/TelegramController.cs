@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Application.Cqrs.Queris;
+using Application.Mediator.Banks.Query;
+using Application.Mediator.Categories.Query;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -7,10 +10,18 @@ namespace API.Controllers
     [ApiController]
     public class TelegramController : ControllerBase
     {
-        [HttpPost("[action]")]
-        public string Test()
+
+        private readonly IQueryDispatcher   _queryDispatcher;
+
+        public TelegramController(IQueryDispatcher queryDispatcher)
         {
-            return "ok";
+            _queryDispatcher = queryDispatcher;
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> Test()
+        {
+            return Ok(await _queryDispatcher.SendAsync(new GetAllCategoryQuery { Count=10,PageNumber = 1}));
         }
     }
 }

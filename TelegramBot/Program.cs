@@ -44,7 +44,7 @@ var serviceCollection = new ServiceCollection()
     .AddScoped<ICacheServices, CacheServices>()
     .AddHostedService<ConfigJobSchedule>()
     .AddScoped<IServiceProvider, ServiceProvider>()
-    .AddScoped<IApplicationDataContext, ApplicationDataContext>()
+    //.AddScoped<IApplicationDataContext, ApplicationDataContext>()
     .AddStackExchangeRedisCache(options =>
     {
         options.Configuration = "localhost:6379"; // Redis connection string

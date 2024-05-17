@@ -24,6 +24,7 @@ using Domain.Entities.Plans;
 using Domain.Entities.UserPurchases;
 using Application.Services.TelegramServices.Interfaces;
 using Application.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
@@ -38,8 +39,9 @@ namespace Application.Services.TelegramServices.BaseMethods
         private readonly IGenericRepository<Plan> _planRepo;
         private readonly IGenericRepository<UserPurchase> _userPerchaseRepo;
         private readonly IMapper _mapper;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonServices, ICommandDispatcher commandDispatcher, IMapper mapper, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo, IGenericRepository<Plan> planRepo, IGenericRepository<UserPurchase> userPerchaseRepo)
+        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonServices, ICommandDispatcher commandDispatcher, IMapper mapper, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo, IGenericRepository<Plan> planRepo, IGenericRepository<UserPurchase> userPerchaseRepo, IServiceScopeFactory serviceScopeFactory)
         {
             _cache = cache;
             _disCache = disCache;
@@ -50,13 +52,14 @@ namespace Application.Services.TelegramServices.BaseMethods
             _categoryRepo = categoryRepo;
             _planRepo = planRepo;
             _userPerchaseRepo = userPerchaseRepo;
+            _serviceScopeFactory = serviceScopeFactory;
         }
         public async Task HandleCallbackQueryAsync(ITelegramBotClient client, CallbackQuery callbackQuery, UserSession userSession)
         {
             MenuConfigs menu = new(client, _disCache);
             TransactionConfigs transactionMenu = new(client, _dynamicButtonServices,_bankRepo,_categoryRepo);
             SettingMenuConfigs settingMenu = new(client);
-            CategoryConfigs categoryMenu = new(client, _dynamicButtonServices,_categoryRepo);
+            CategoryConfigs categoryMenu = new(client, _dynamicButtonServices,_categoryRepo,_serviceScopeFactory);
             GlobalConfigs globalMessage = new(client);
             PlanConfigs planConfig = new(client,_planRepo);
             AccountConfigs accountConfig = new(_userPerchaseRepo);

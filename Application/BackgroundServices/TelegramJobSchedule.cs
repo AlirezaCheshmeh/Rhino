@@ -20,36 +20,65 @@ using Application.Database;
 using MediatR;
 using Application.Services.TelegramServices.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Application.BackgroundServices
 {
     public class TelegramJobSchedule : BackgroundService
     {
-        private readonly IHandleUpdates _handleUpdates;
-        private readonly ITelegramBotClient _telegramBotClient;
+        private readonly IConfiguration _configuration;
         private readonly IDistributedCache _distributedCache;
+        private readonly IServiceScopeFactory _serviceProvider;
+        private readonly ILogger<TelegramJobSchedule> _logger;
 
 
-        public TelegramJobSchedule(IHandleUpdates handleUpdates, IDistributedCache distributedCache, ITelegramBotClient telegramBotClient)
+        public TelegramJobSchedule(IDistributedCache distributedCache, IServiceScopeFactory serviceProvider, IConfiguration configuration, ILogger<TelegramJobSchedule> logger)
         {
-            _handleUpdates = handleUpdates;
             _distributedCache = distributedCache;
-            _telegramBotClient = telegramBotClient;
+            _serviceProvider = serviceProvider;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         protected async override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            CacheExtension.Initialize(_distributedCache);
-            HandleError handleError = new();
+            bool hasRun = false;
+            using var scope = _serviceProvider.CreateScope();
 
-            await Command.SetBotCommands(_telegramBotClient);
-            await _telegramBotClient.DeleteWebhookAsync();
-            using var cts = new CancellationTokenSource();
+            while (true)
+            {
 
-            var receiverOptions = new ReceiverOptions { AllowedUpdates = { } };
+                try
+                {
+                    if (!hasRun)
+                    {
+                        var _handleUpdates = scope.ServiceProvider.GetRequiredService<IHandleUpdates>();
+                        CacheExtension.Initialize(_distributedCache);
+                        HandleError handleError = new();
+                        var _telegramBotClient = new TelegramBotClient(_configuration["TelegramSettings:TelegramKey"]);
+                        await Command.SetBotCommands(_telegramBotClient);
+                        await _telegramBotClient.DeleteWebhookAsync();
+                        using var cts = new CancellationTokenSource();
 
-            _telegramBotClient.StartReceiving(_handleUpdates.HandleUpdateAsync, handleError.HandleerrorAsync, receiverOptions, cts.Token);
-            var me = await _telegramBotClient.GetMeAsync();
+                        var receiverOptions = new ReceiverOptions { AllowedUpdates = { } };
+
+                        _telegramBotClient.StartReceiving(_handleUpdates.HandleUpdateAsync, handleError.HandleerrorAsync, receiverOptions, cts.Token);
+                        _logger.LogInformation("bot start recieving");
+                        var me = await _telegramBotClient.GetMeAsync();
+                        _logger.LogInformation($"bot start name:{me}");
+                        hasRun = true;
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    hasRun = false;
+                    Console.WriteLine(ex);
+                }
+
+
+            }
+
         }
     }
 }

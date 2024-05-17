@@ -7,6 +7,8 @@ using static Application.Services.TelegramServices.ConstVariable.ConstCallBackDa
 using Application.Services.TelegramServices.ConstVariable;
 using Application.Common;
 using Application.MapperProfile;
+using Microsoft.Extensions.DependencyInjection;
+using Application.Database;
 
 namespace Application.Services.TelegramServices.Configurations
 {
@@ -15,16 +17,19 @@ namespace Application.Services.TelegramServices.Configurations
         private readonly ITelegramBotClient _client;
         private readonly IDynamicButtonsServices _dynamicButtonsServices;
         private readonly IGenericRepository<Category> _categoryRepository;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public CategoryConfigs(ITelegramBotClient client, IDynamicButtonsServices dynamicButtonsServices, IGenericRepository<Category> categoryRepository)
+        public CategoryConfigs(ITelegramBotClient client, IDynamicButtonsServices dynamicButtonsServices, IGenericRepository<Category> categoryRepository, IServiceScopeFactory scopeFactory)
         {
             _client = client;
             _dynamicButtonsServices = dynamicButtonsServices;
+            _scopeFactory = scopeFactory;
             _categoryRepository = categoryRepository;
         }
 
         public async Task SendInBoundCategoriesToUser(long chatId)
         {
+
             var cats = await _categoryRepository.GetAsNoTrackingQuery().Select(z => new NameValueDTO
             {
                 Name = z.Name,
@@ -44,6 +49,7 @@ namespace Application.Services.TelegramServices.Configurations
           parseMode: ParseMode.Html,
           replyMarkup: inlineKeyboards);
         }
+
 
 
 

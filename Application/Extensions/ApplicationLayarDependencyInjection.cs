@@ -63,6 +63,11 @@ namespace Application.Extensions
             //add Token Services
             Services.AddScoped<IToken, Token>();
 
+            Services.AddScoped<ICacheServices,CacheServices>();
+            Services.AddScoped<IHandleUpdates, HandleUpdate>();
+            Services.AddScoped<IHandleCallbackQuery, HandleCallbackQuery>();
+            Services.AddScoped<IHandleMessage, HandleMessage>();
+            Services.AddScoped<IDynamicButtonsServices,DynamicButtonsServices>();
             Services.AddHttpClient<ITelegramBotClient, TelegramBotClient>((httpClient, sp) =>
             {
                 var telegramSettings = sp.GetRequiredService<IOptions<TelegramSettings>>().Value;

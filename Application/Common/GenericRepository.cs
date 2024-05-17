@@ -12,7 +12,7 @@ using Domain.Entities.BaseEntity;
 
 namespace Application.Common
 {
-    public class GenericRepository<T> : IGenericRepository<T> where T : class
+    public class GenericRepository<T> :IDisposable,IGenericRepository<T> where T : class
     {
         protected readonly IApplicationDataContext Context;
 
@@ -301,6 +301,10 @@ namespace Application.Common
                 throw new InvalidOperationException($"{nameof(entity)} does not have interface {nameof(ISoftDelete)}");
             }
             await UpdateAsync(entity, cancellationToken, saveNow);
+        }
+
+        public void Dispose()
+        {
         }
         #endregion
     }

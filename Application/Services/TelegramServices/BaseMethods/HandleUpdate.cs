@@ -28,10 +28,11 @@ namespace Application.Services.TelegramServices.BaseMethods
         private readonly IHandleMessage _handleMessage;
         private readonly IDistributedCache _disCache;
 
-        public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IHandleCallbackQuery handleCallbackQuery)
+        public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IHandleCallbackQuery handleCallbackQuery, IHandleMessage handleMessage)
         {
             _disCache = disCache;
             _handleCallbackQuery = handleCallbackQuery;
+            _handleMessage = handleMessage;
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient client, Update update, CancellationToken cancellationToken = default)

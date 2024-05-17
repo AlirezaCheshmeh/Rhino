@@ -43,7 +43,8 @@ namespace Application.Mediator.Banks.Command
                 {
                     Branch = request.dto.Branch,
                     Name = request.dto.Name,
-                    SVG = request.dto.SVG
+                    SVG = request.dto.SVG,
+                    TelegramId = request.dto.TelegramId
                 }, cancellationToken);
 
                 return new ServiceRespnse().OK();
