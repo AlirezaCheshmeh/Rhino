@@ -1,4 +1,5 @@
 ﻿using Application.Mediator.Banks.DTOs;
+using Application.Mediator.Reminders.DTOs;
 using Application.Mediator.Transactions.DTOs;
 using Application.Services.TelegramServices.BaseMethods;
 using AutoMapper;
@@ -15,6 +16,7 @@ namespace Application.MapperProfile
             CreateMap<Category, NameValueDTO>().ReverseMap();
             CreateMap<Transaction, TransactionDTO>().ReverseMap();
             CreateMap<TransactionDto, TransactionDTO>().ReverseMap();
+            CreateMap<ReminderDto,ReminderDTO>().ReverseMap();
             CreateMap<BankDTO, Bank>().ReverseMap();
         }
     }

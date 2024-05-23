@@ -12,7 +12,7 @@ using Domain.Entities.BaseEntity;
 
 namespace Application.Common
 {
-    public class GenericRepository<T> :IDisposable,IGenericRepository<T> where T : class
+    public class GenericRepository<T> :IGenericRepository<T> where T : class
     {
         protected readonly IApplicationDataContext Context;
 
@@ -27,6 +27,7 @@ namespace Application.Common
             try
             {
                 await Context.Set<T>().AddAsync(Entity);
+                await Context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -303,9 +304,7 @@ namespace Application.Common
             await UpdateAsync(entity, cancellationToken, saveNow);
         }
 
-        public void Dispose()
-        {
-        }
+      
         #endregion
     }
 }

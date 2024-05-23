@@ -11,5 +11,6 @@ namespace Application.Mediator.Transactions.DTOs
         public string BiggestOutBound { get; set; }
         public string Description { get; set; }
         public string SumAmount { get; set; }
+        public string BankTransaction { get; internal set; }
     }
 }

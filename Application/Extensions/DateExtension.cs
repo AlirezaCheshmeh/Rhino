@@ -16,6 +16,12 @@ namespace Application.Extensions
             DateTime date = new DateTime(yyyy[0], yyyy[1], yyyy[2], persian);
             return date;
         }
+        /// <summary>
+        /// yyy/MM/dd string format
+        /// </summary>
+        /// <param name="Date"></param>
+        /// <param name="ForSave"></param>
+        /// <returns></returns>
         public static string ConvertToPersianDate(string Date, bool ForSave = false)
         {
             DateTime date = DateTime.ParseExact(Date, "yyyy/MM/dd", CultureInfo.InvariantCulture);
@@ -43,6 +49,16 @@ namespace Application.Extensions
 
 
         }
+
+        public static int ToPersianYear(this int gregorianYear)
+        {
+            var gregorianDate = new DateTime(gregorianYear, 1, 1, new GregorianCalendar());
+            PersianCalendar persianCalendar = new PersianCalendar();
+            var year = persianCalendar.GetYear(gregorianDate);
+            year++;
+            return year;
+        }
+
         public static string ConvertDayOWeekToPersian(string DayInEnglish)
         {
             switch (DayInEnglish)

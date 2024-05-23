@@ -4,6 +4,7 @@ using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDataContext))]
-    partial class ApplicationDataContextModelSnapshot : ModelSnapshot
+    [Migration("20240520174155_RemonveTypeFromReminder")]
+    partial class RemonveTypeFromReminder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -243,6 +246,9 @@ namespace Infrastructure.Migrations
                     b.Property<long>("TelegramId")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -280,21 +286,21 @@ namespace Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2024, 5, 20, 21, 17, 48, 716, DateTimeKind.Local).AddTicks(4088),
+                            CreatedAt = new DateTime(2024, 5, 20, 21, 11, 55, 104, DateTimeKind.Local).AddTicks(5268),
                             IsDeleted = false,
                             RoleName = "SuperAdmin"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2024, 5, 20, 21, 17, 48, 716, DateTimeKind.Local).AddTicks(4113),
+                            CreatedAt = new DateTime(2024, 5, 20, 21, 11, 55, 104, DateTimeKind.Local).AddTicks(5294),
                             IsDeleted = false,
                             RoleName = "Admin"
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2024, 5, 20, 21, 17, 48, 716, DateTimeKind.Local).AddTicks(4116),
+                            CreatedAt = new DateTime(2024, 5, 20, 21, 11, 55, 104, DateTimeKind.Local).AddTicks(5298),
                             IsDeleted = false,
                             RoleName = "User"
                         });

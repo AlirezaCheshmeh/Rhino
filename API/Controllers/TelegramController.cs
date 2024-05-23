@@ -1,6 +1,7 @@
 ﻿using Application.Cqrs.Queris;
 using Application.Mediator.Banks.Query;
 using Application.Mediator.Categories.Query;
+using Application.Mediator.Transactions.Query;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,7 +22,7 @@ namespace API.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> Test()
         {
-            return Ok(await _queryDispatcher.SendAsync(new GetAllCategoryQuery { Count=10,PageNumber = 1}));
+            return Ok(await _queryDispatcher.SendAsync(new GetOutBoundTransactionTodaySummary { TelegramId = 5690372630 }));
         }
     }
 }

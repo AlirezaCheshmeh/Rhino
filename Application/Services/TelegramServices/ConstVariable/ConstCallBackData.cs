@@ -27,20 +27,41 @@ namespace Application.Services.TelegramServices.ConstVariable
             public const string BuyAccount = "BuyAccount";
         }
 
+        public static class Report
+        {
+            public const string InBound = "inboundreport";
+            public const string InBoundTodayReport = "inboundtodayreport";
+            public const string InBoundTodaySummaryReport = "inboundtodaysummaryreport";
+            public const string OutBound = "outboundreport";
+            public const string OutBoundTodayReport = "outboundtodayreport";
+            public const string OutBoundTodaySummaryReport = "outboundtodaysummaryreport";
+        }
+
+        public static class Reminder
+        {
+            public const string ChooseReminderMonth = "remindermonth";
+            public const string ChooseReminderDay = "reminderday";
+            public const string RemindDescription = "reminddescription";
+            public const string RemindAmount = "remindamount";
+        }
+
         public static class OutboundTransaction
         {
             public const string Daily = "daily";
-            public const string SpecificDate = "SpecificDate";
+            public const string OutBoundSpecificDate = "outboundSpecificDate";
             public const string Amount = "Amount";
+            public const string OutBoundSpeseficMonth = "outboundmonth";
+            public const string OutBoundSpeseficDay = "outboundday";
 
         }
 
         public static class InboundTransaction
         {
             public const string Daily = "inbounddaily";
-            public const string SpecificDate = "inboundSpecificDate";
+            public const string InBoundSpecificDate = "inboundSpecificDate";
             public const string Amount = "inboundAmount";
-
+            public const string InboundSpeseficMonth = "inboundmonth";
+            public const string InBoundSpeseficDay = "inboundday";
         }
 
         public static class DailyCategory
@@ -78,6 +99,12 @@ namespace Application.Services.TelegramServices.ConstVariable
         {
             public const string Submit = "inboundTransactionSubmit";
             public const string Cancel = "intboundTransactionCancel";
+        }
+
+        public static class ReminderPreview
+        {
+            public const string Submit = "ReminderSubmit";
+            public const string Cancel = "ReminderCancel";
         }
         public static class Global
         {

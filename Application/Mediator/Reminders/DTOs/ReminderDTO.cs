@@ -11,9 +11,9 @@ namespace Application.Mediator.Reminders.DTOs
         public string Description { get; set; }
         public decimal Mount { get; set; }
         public DateTime RemindDate { get; set; }
-        public bool IsRemindMeAgain { get; set; }
+        public bool IsRemindMeAgain { get; set; } = false;
         public DateTime? RemindAgainDate { get; set; }
-        public long Id { get; set; }
+        public long Id { get; set; } = 0;
         public long TelegramId { get; set; }
     }
 }

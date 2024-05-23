@@ -22,7 +22,7 @@ using Application.Extensions;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
-    public class HandleUpdate : IHandleUpdates,IScopedDependency
+    public class HandleUpdate : IHandleUpdates, IScopedDependency
     {
         private readonly IHandleCallbackQuery _handleCallbackQuery;
         private readonly IHandleMessage _handleMessage;
@@ -65,17 +65,39 @@ namespace Application.Services.TelegramServices.BaseMethods
                     if (callBackData.Contains(ConstCallBackData.DailyOrSpecificDate.Bank))
                     {
                         commandState = CommandState.Amount;
-                        callBackData = callBackData.Substring(0, 4);
                     }
                     else if (callBackData.Contains(ConstCallBackData.DailyCategory.Category))
                     {
                         commandState = CommandState.ChooseBankDaily;
                     }
-
+                    else if (callBackData.Contains(ConstCallBackData.OutboundTransaction.OutBoundSpeseficDay))
+                    {
+                        commandState = CommandState.ChooseCategoryDaily;
+                    }
+                    else if (callBackData.Contains(ConstCallBackData.InboundTransaction.InBoundSpeseficDay))
+                    {
+                        commandState = CommandState.InboundChooseCategoryDaily;
+                    }
+                    else if (callBackData.Contains(ConstCallBackData.OutboundTransaction.OutBoundSpeseficMonth))
+                    {
+                        commandState = CommandState.OutboundMonth;
+                    }
+                    else if (callBackData.Contains(ConstCallBackData.InboundTransaction.InboundSpeseficMonth))
+                    {
+                        commandState = CommandState.InboundMonth;
+                    }
                     else if (callBackData.Contains(ConstCallBackData.InboundDailyOrSpecificDate.Bank))
                     {
                         commandState = CommandState.InboundAmount;
                         callBackData = callBackData.Substring(0, 4);
+                    }
+                    else if (callBackData.Contains(ConstCallBackData.Reminder.ChooseReminderMonth))
+                    {
+                        commandState = CommandState.ChooseDayReminder;
+                    }
+                    else if (callBackData.Contains(ConstCallBackData.Reminder.ChooseReminderDay))
+                    {
+                        commandState = CommandState.ReminderAmount;
                     }
                     else if (callBackData.Contains(ConstCallBackData.InboundDailyCategory.Category))
                     {
@@ -96,6 +118,19 @@ namespace Application.Services.TelegramServices.BaseMethods
                             ConstCallBackData.Menu.OutboundTransaction => CommandState.InsertOutboundTransaction,
                             //menu end===================================================================
 
+
+                            //reminder start===============================================================
+                            ConstCallBackData.Reminder.ChooseReminderMonth => CommandState.ChooseDayReminder,
+                            ConstCallBackData.ReminderPreview.Submit => CommandState.ReminderSubmit,
+                            //reminder end=================================================================
+
+                            //report start===============================================================
+                            ConstCallBackData.Report.InBound => CommandState.InboundReport,
+                            ConstCallBackData.Report.InBoundTodaySummaryReport => CommandState.InboundSummary,
+                            ConstCallBackData.Report.OutBoundTodaySummaryReport => CommandState.OutboundSummary,
+                            ConstCallBackData.Report.OutBound => CommandState.OutboundReport,
+                            //report end=================================================================
+
                             //bank start====================================================================
                             ConstCallBackData.BankMenu.GetBankList => CommandState.GetBankList,
                             ConstCallBackData.BankMenu.InsertNewBank => CommandState.InsertNewbank,
@@ -103,8 +138,10 @@ namespace Application.Services.TelegramServices.BaseMethods
 
                             //inbound start=================================================================
                             ConstCallBackData.InboundTransaction.Daily => CommandState.InboundChooseCategoryDaily,
+                            ConstCallBackData.InboundTransaction.InBoundSpeseficDay => CommandState.InboundChooseCategoryDaily,
+                            ConstCallBackData.InboundTransaction.InboundSpeseficMonth => CommandState.InboundMonth,
                             ConstCallBackData.InboundDailyCategory.Category => CommandState.InboundChooseBankDaily,
-                            ConstCallBackData.InboundTransaction.SpecificDate => CommandState.InboundChooseBankSpecificDate,
+                            ConstCallBackData.InboundTransaction.InBoundSpecificDate => CommandState.InboundTransactionSpecificDate,
                             ConstCallBackData.InboundTransactionPreview.Submit => CommandState.InBoundTransactionSubmit,
                             ConstCallBackData.InboundTransactionPreview.Cancel => CommandState.InboundTransactionCancel,
                             ConstCallBackData.DailyOrSpecificDate.Bank => CommandState.Amount,
@@ -112,8 +149,10 @@ namespace Application.Services.TelegramServices.BaseMethods
 
                             //outbound start=================================================================
                             ConstCallBackData.OutboundTransaction.Daily => CommandState.ChooseCategoryDaily,
+                            ConstCallBackData.OutboundTransaction.OutBoundSpeseficDay => CommandState.ChooseCategoryDaily,
+                            ConstCallBackData.OutboundTransaction.OutBoundSpeseficMonth => CommandState.OutboundMonth,
                             ConstCallBackData.DailyCategory.Category => CommandState.ChooseBankDaily,
-                            ConstCallBackData.OutboundTransaction.SpecificDate => CommandState.ChooseBankSpecificDate,
+                            ConstCallBackData.OutboundTransaction.OutBoundSpecificDate => CommandState.OutboundTransactionSpecificDate,
                             ConstCallBackData.OutboundTransactionPreview.Submit => CommandState.OutBoundTransactionSubmit,
                             ConstCallBackData.OutboundTransactionPreview.Cancel => CommandState.OutboundTransactionCancel,
                             ConstCallBackData.InboundDailyOrSpecificDate.Bank => CommandState.InboundAmount,
@@ -143,6 +182,11 @@ namespace Application.Services.TelegramServices.BaseMethods
                         CommandState.InboundDescription => CommandState.InboundTransactionPreview,
                         CommandState.InboundTransactionPreview => CommandState.InboundTransactionPreview,
                         //Inbound end==========================================================
+
+                        //reminder start======================================================
+                        CommandState.ReminderAmount => CommandState.ReminderDescription,
+                        CommandState.ReminderDescription => CommandState.ReminderPreview,
+                        //reminder end========================================================
 
                         //settings =>Bank start================================================
                         CommandState.InsertNewbank => CommandState.InsertNewbankMessage,
@@ -234,7 +278,29 @@ namespace Application.Services.TelegramServices.BaseMethods
             //features
             BuyAccount,
             Reports,
+            OutboundMonth,
+            InboundMonth,
+
+
+            //reminder
             RemindPeriodic,
+            ChooseMonthReminder,
+            ChooseDayReminder,
+            ReminderDescription,
+            ReminderAmount,
+            ReminderPreview,
+            ReminderSubmit,
+
+            //report
+            ChooseReportType,
+            InboundReport,
+            InboundSummary,
+            InboundTodayReport,
+            OutboundTodayReport,
+            OutboundSummary,
+            OutboundReport,
+
+
         }
 
     }

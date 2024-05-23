@@ -6,6 +6,7 @@ using Application.Services.TelegramServices.ConstVariable;
 using Domain.Entities.Banks;
 using Domain.Entities.Categories;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -34,7 +35,7 @@ namespace Application.Services.TelegramServices.Configurations
                 new[]
                 {
                     InlineKeyboardButton.WithCallbackData(ConstMessage.Today, ConstCallBackData.OutboundTransaction.Daily),
-                    InlineKeyboardButton.WithCallbackData(ConstMessage.SpecificDate, ConstCallBackData.OutboundTransaction.SpecificDate),
+                    InlineKeyboardButton.WithCallbackData(ConstMessage.SpecificDate, ConstCallBackData.OutboundTransaction.OutBoundSpecificDate),
                 },
                 new[]
                 {
@@ -57,7 +58,7 @@ namespace Application.Services.TelegramServices.Configurations
                 new[]
                 {
                     InlineKeyboardButton.WithCallbackData(ConstMessage.Today, ConstCallBackData.InboundTransaction.Daily),
-                    InlineKeyboardButton.WithCallbackData(ConstMessage.SpecificDate, ConstCallBackData.InboundTransaction.SpecificDate),
+                    InlineKeyboardButton.WithCallbackData(ConstMessage.SpecificDate, ConstCallBackData.InboundTransaction.InBoundSpecificDate),
                 },
                 new[]
                 {
@@ -75,7 +76,7 @@ namespace Application.Services.TelegramServices.Configurations
 
         public async Task SendChooseBankAsync(long chatId, long telegramId)
         {
-           
+
             var banks = await _bankRepository.GetAsNoTrackingQuery().Where(z => z.TelegramId == telegramId).Select(x => new NameValueDTO
             {
                 Id = x.Id,
@@ -125,12 +126,13 @@ namespace Application.Services.TelegramServices.Configurations
         {
             var bankName = (await _bankRepository.GetAsNoTrackingQuery().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
             var CatName = (await _categoryRepository.GetAsNoTrackingQuery().Where(z => z.Id == transaction.CategoryId.Value).FirstOrDefaultAsync()).Name;
-            var message = $"{ConstMessage.OutboundTransactionPreview} \nمبلغ: {transaction.Amount.Value.ToString("N0").ToPersianNumber()}\n" +
+            var message = new StringBuilder($"{ConstMessage.OutboundTransactionPreview} \n \n مبلغ: {transaction.Amount.Value.ToString("N0").ToPersianNumber()}\n" + 
                           $"بابت: {transaction.Description}\n" +
-                          $"دسته یندی: {CatName}\n" +
+                          $"دسته بندی: {CatName}\n" +
                           $"بانک: {bankName}\n" +
-                          $"نوع: {transaction.Type.ToDisplay()}\n";
-            //todo: please get from banks table and replace bank name with bank id,
+                          $"نوع: {transaction.Type.ToDisplay()}\n");
+            if (transaction.CreatedAt.HasValue)
+                message.Append($"در تاریخ: {DateExtension.ConvertToPersianDate(transaction.CreatedAt.Value.ToString("yyy/MM/dd")).ToPersianNumber()}");
 
             var inlineKeyboards = new InlineKeyboardMarkup(new[]
             {
@@ -140,8 +142,11 @@ namespace Application.Services.TelegramServices.Configurations
                    InlineKeyboardButton.WithCallbackData(ConstMessage.Submit,transaction.Type == Domain.Enums.TransactionType.OutBound?ConstCallBackData.OutboundTransactionPreview.Submit:ConstCallBackData.InboundTransactionPreview.Submit)
                },
             });
-            await _client.SendTextMessageAsync(chatId: chatId, text: message, replyMarkup: inlineKeyboards);
+            await _client.SendTextMessageAsync(chatId: chatId, text: message.ToString(), replyMarkup: inlineKeyboards);
         }
+
+
+       
     }
 
 }
