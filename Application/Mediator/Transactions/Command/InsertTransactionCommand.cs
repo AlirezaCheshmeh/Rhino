@@ -25,6 +25,8 @@ namespace Application.Mediator.Transactions.Command
             public async Task<ServiceRespnse> Handle(InsertTransactionCommand request, CancellationToken cancellationToken)
             {
                 var transaction = _mapper.Map<Transaction>(request.dto);
+                if (request.dto.CreatedAt == null)
+                    transaction.CreatedAt = DateTime.Now;
                 await _transactionRepository.AddAsync(transaction, cancellationToken);
                 return new ServiceRespnse().OK();
             }

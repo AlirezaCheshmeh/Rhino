@@ -18,7 +18,7 @@ namespace Domain.Entities.BaseEntity
     public abstract class BaseEntity<TKey> : IEntity<TKey>, ISoftDelete
     {
         public TKey Id { get; set; }
-        public DateTime CreatedAt { get; private set; }
+        public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsDeleted { get; set; } = false;
         public BaseEntity()

@@ -52,6 +52,7 @@ namespace Application.Services.TelegramServices.BaseMethods
             TransactionConfigs transactionMenu = new(client, _dynamicButtonsServices, _bankRepo, _categoryRepo);
             CategoryConfigs catMenu = new(client, _dynamicButtonsServices, _categoryRepo, _serviceScopeFactory);
             GlobalConfigs globalMessage = new(client);
+            ReminderConfigs reminderConfigs = new(client);
 
             try
             {
@@ -116,7 +117,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                                 },
                             });
                             var descriptionMessage = await client
-                                .SendTextMessageAsync(message.Chat.Id, ConstMessage.InsertDescription, parseMode: ParseMode.Html,
+                                .SendTextMessageAsync(message.Chat.Id, ConstMessage.OutBoundInsertDescription, parseMode: ParseMode.Html,
                                     replyMarkup: inlineKeyboardDescription);
                             userSession.MessageIds.Add(descriptionMessage.MessageId);
                             await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
@@ -143,7 +144,69 @@ namespace Application.Services.TelegramServices.BaseMethods
                     #endregion
                     //OutBound end=====================================
 
+                    //reminder start================================
+                    #region reminderDescrioption
+                    case CommandState.ReminderDescription:
+                        ReminderDto? reminderamount = null;
+                        var reminderAmount =
+                             await CacheExtension.GetValueAsync<ReminderDto>(userIdKey + ConstKey.Reminder);
+                        //convert to english numbers
+                        var reminderamountResult = message.Text.ToEnglishNumber();
+                        if (reminderAmount is null)
+                        {
+                            await globalMessage.SendErrorToUser(message.Chat.Id);
+                            await menu.RollBackToMenu(userIdKey, message.Chat.Id, userSession);
+                        }
+                        if (!(IsInteger(reminderamountResult) && IsDouble(reminderamountResult)))
+                        {
+                            Message ErrorMessage = await globalMessage.SendAmountValidationErrorMessageToUser(message.Chat.Id);
+                            userSession.MessageIds.Add(message.MessageId);
+                            userSession.MessageIds.Add(ErrorMessage.MessageId);
+                            userSession.CommandState = CommandState.ReminderAmount;
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        }
+                        else
+                        {
+                            _ = decimal.TryParse(reminderamountResult, out var resamount);
+                            reminderAmount!.Amount = resamount;
+                            await CacheExtension.UpdateCacheAsync(_disCache, userIdKey + ConstKey.Reminder, reminderAmount);
 
+                            var inlineKeyboardDescription = new InlineKeyboardMarkup(new[]
+                                 {
+                                new[]
+                                {
+                                    InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back)
+                                },
+                            });
+                            var descriptionMessage = await client
+                                .SendTextMessageAsync(message.Chat.Id, ConstMessage.InsertReminderDescription, parseMode: ParseMode.Html,
+                                    replyMarkup: inlineKeyboardDescription);
+                            userSession.MessageIds.Add(descriptionMessage.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        }
+                        break;
+                    #endregion
+
+                    #region ReminderPreview
+                    case CommandState.ReminderPreview:
+                        var Reminderdto = await CacheExtension.GetValueAsync<ReminderDto>(userIdKey + ConstKey.Reminder);
+                        if (Reminderdto is null)
+                        {
+                            var ErrorMessage = await globalMessage.SendErrorToUser(message.Chat.Id);
+                            userSession.MessageIds.Add(ErrorMessage.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                            await menu.RollBackToMenu(userIdKey, message.Chat.Id, userSession);
+                        }
+                        else
+                        {
+
+                            Reminderdto.Description = message.Text;
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Reminder, Reminderdto);
+                            await reminderConfigs.SendReminderPreviewAsync(message.Chat.Id, Reminderdto);
+                        }
+                        break;
+                    #endregion
+                    //reminder end===================================
                     //Inbound start==================================
                     #region InboundDescription
                     case CommandState.InboundDescription:

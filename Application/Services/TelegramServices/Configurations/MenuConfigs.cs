@@ -72,10 +72,12 @@ namespace Application.Services.TelegramServices.Configurations
             {
                 _client.DeleteMessageAsync(chatId, item);
             });
-            Task.Delay(150).Wait();
+            Task.Delay(50).Wait();
             await _disCache.RemoveAsync(userIdKey + ConstKey.Transaction);
             await _disCache.RemoveAsync(userIdKey + ConstKey.Bank);
             await _disCache.RemoveAsync(userIdKey + ConstKey.Session);
+            await _disCache.RemoveAsync(userIdKey + ConstKey.InBoundMonth);
+            await _disCache.RemoveAsync(userIdKey + ConstKey.OutBoundMonth);
         }
 
 

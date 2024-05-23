@@ -3,6 +3,7 @@ using Application.Cqrs.Commands;
 using Application.Cqrs.Commands.Dispatcher;
 using Application.Cqrs.Queris;
 using Application.Cqrs.Queris.Dispatcher;
+using Application.Mediator.Transactions.Query;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;

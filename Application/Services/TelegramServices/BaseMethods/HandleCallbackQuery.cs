@@ -25,15 +25,20 @@ using Domain.Entities.UserPurchases;
 using Application.Services.TelegramServices.Interfaces;
 using Application.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using static Application.Services.TelegramServices.ConstVariable.ConstCallBackData;
+using Application.Mediator.Reminders.DTOs;
+using Application.Mediator.Reminders.Command;
+using Application.Cqrs.Queris;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
-    public class HandleCallbackQuery : IHandleCallbackQuery,IScopedDependency
+    public class HandleCallbackQuery : IHandleCallbackQuery, IScopedDependency
     {
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;
         private readonly IDynamicButtonsServices _dynamicButtonServices;
         private readonly ICommandDispatcher _commandDispatcher;
+        private readonly IQueryDispatcher _queryDispatcher;
         private readonly IGenericRepository<Bank> _bankRepo;
         private readonly IGenericRepository<Category> _categoryRepo;
         private readonly IGenericRepository<Plan> _planRepo;
@@ -41,7 +46,7 @@ namespace Application.Services.TelegramServices.BaseMethods
         private readonly IMapper _mapper;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonServices, ICommandDispatcher commandDispatcher, IMapper mapper, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo, IGenericRepository<Plan> planRepo, IGenericRepository<UserPurchase> userPerchaseRepo, IServiceScopeFactory serviceScopeFactory)
+        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonServices, ICommandDispatcher commandDispatcher, IMapper mapper, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo, IGenericRepository<Plan> planRepo, IGenericRepository<UserPurchase> userPerchaseRepo, IServiceScopeFactory serviceScopeFactory, IQueryDispatcher queryDispatcher)
         {
             _cache = cache;
             _disCache = disCache;
@@ -53,16 +58,20 @@ namespace Application.Services.TelegramServices.BaseMethods
             _planRepo = planRepo;
             _userPerchaseRepo = userPerchaseRepo;
             _serviceScopeFactory = serviceScopeFactory;
+            _queryDispatcher = queryDispatcher;
         }
         public async Task HandleCallbackQueryAsync(ITelegramBotClient client, CallbackQuery callbackQuery, UserSession userSession)
         {
             MenuConfigs menu = new(client, _disCache);
-            TransactionConfigs transactionMenu = new(client, _dynamicButtonServices,_bankRepo,_categoryRepo);
+            TransactionConfigs transactionMenu = new(client, _dynamicButtonServices, _bankRepo, _categoryRepo);
             SettingMenuConfigs settingMenu = new(client);
-            CategoryConfigs categoryMenu = new(client, _dynamicButtonServices,_categoryRepo,_serviceScopeFactory);
+            CategoryConfigs categoryMenu = new(client, _dynamicButtonServices, _categoryRepo, _serviceScopeFactory);
             GlobalConfigs globalMessage = new(client);
-            PlanConfigs planConfig = new(client,_planRepo);
+            PlanConfigs planConfig = new(client, _planRepo);
             AccountConfigs accountConfig = new(_userPerchaseRepo);
+            DateFunctions dateConfig = new(client);
+            ReminderConfigs reminderConfig = new(client);
+            ReportConfigs reportConfig = new(client,_queryDispatcher);
             try
             {
                 var userIdKey = callbackQuery.From.Id;
@@ -108,15 +117,41 @@ namespace Application.Services.TelegramServices.BaseMethods
 
                     #region OutboundTransactionDaily
                     case CommandState.OutboundTransactionDaily:
-                        await transactionMenu.SendInBoundTransactionAsync(callbackQuery.Message.Chat.Id);
+                        await transactionMenu.SendOutBoundTransactionAsync(callbackQuery.Message.Chat.Id);
+                        break;
+                    #endregion
+
+                    #region OutboundSpeseficDate
+                    case CommandState.OutboundTransactionSpecificDate:
+                        await dateConfig.SendOutBoundMonthOfDate(callbackQuery.Message.Chat.Id);
+                        break;
+                    #endregion
+
+                    #region OutBoundMonth
+                    case CommandState.OutboundMonth:
+                        var dateMonth = Convert.ToInt64(callbackQuery.Data?.Split("-").LastOrDefault());//get month here
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.OutBoundMonth, dateMonth);//set month to cache
+                        await dateConfig.SendOutboundDaysOfDate(callbackQuery.Message.Chat.Id);
                         break;
                     #endregion
 
                     #region ChooseCategoryDaily
                     case CommandState.ChooseCategoryDaily:
-                        var transaction = new TransactionDto();
-                        transaction.Type = TransactionType.OutBound;
-                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, transaction);
+                        DateTime? outBoundChosenDate = null;
+                        if (callbackQuery.Data.Contains(ConstCallBackData.OutboundTransaction.OutBoundSpeseficDay))
+                        {
+                            var dateDay = Convert.ToInt32(callbackQuery.Data?.Split("-").LastOrDefault());//get day here
+                            var outBountmonth = await CacheExtension.GetValueAsync<int>(userIdKey + ConstKey.OutBoundMonth);//set month to cache
+                            var year1 = DateTime.Now.Year.ToPersianYear();
+                            var chosenDate1 = $"{year1}/{outBountmonth}/{dateDay}";
+                            outBoundChosenDate = DateExtension.ConvertToEnglishDate(chosenDate1);
+                        }
+
+                        var Outboundtransaction = new TransactionDto();
+                        Outboundtransaction.Type = TransactionType.OutBound;
+                        Outboundtransaction.CreatedAt = outBoundChosenDate;
+                        Outboundtransaction.TelegramId = callbackQuery.From.Id;
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, Outboundtransaction);
                         await categoryMenu.SendOutBoundCategoriesToUser(callbackQuery.Message.Chat.Id);
                         break;
                     #endregion
@@ -160,7 +195,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                             new[] {InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.Global.BackToMenu) },
                         });
                         var amountMessage = await client
-                            .SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: ConstMessage.InsertAmount, parseMode: ParseMode.Html, replyMarkup: inlineKeyboardAmount);
+                            .SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: ConstMessage.OutBoundInsertAmount, parseMode: ParseMode.Html, replyMarkup: inlineKeyboardAmount);
                         userSession.MessageIds.Add(amountMessage.MessageId);
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                         break;
@@ -226,13 +261,36 @@ namespace Application.Services.TelegramServices.BaseMethods
 
                     #region InboundChooseCategoryDaily
                     case CommandState.InboundChooseCategoryDaily:
-                        var Inboundtransaction = new TransactionDto();
-                        Inboundtransaction.Type = TransactionType.InBound;
-                        var res = await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, Inboundtransaction);
+                        DateTime? ininBoundChosenDate = null;
+                        if (callbackQuery.Data.Contains(ConstCallBackData.InboundTransaction.InBoundSpeseficDay))
+                        {
+                            var IndateDay = Convert.ToInt32(callbackQuery.Data?.Split("-").LastOrDefault());//get day here
+                            var InoutBountmonth = await CacheExtension.GetValueAsync<int>(userIdKey + ConstKey.InBoundMonth);//set month to cache
+                            var Inyear = DateTime.Now.Year.ToPersianYear();
+                            var InchosenDate = $"{Inyear}/{InoutBountmonth}/{IndateDay}";
+                            ininBoundChosenDate = DateExtension.ConvertToEnglishDate(InchosenDate);
+                        }
+                        var Ininboundtransaction = new TransactionDto();
+                        Ininboundtransaction.Type = TransactionType.InBound;
+                        Ininboundtransaction.CreatedAt = ininBoundChosenDate;
+                        Ininboundtransaction.TelegramId = callbackQuery.From.Id;
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Transaction, Ininboundtransaction);
                         await categoryMenu.SendInBoundCategoriesToUser(callbackQuery.Message.Chat.Id);
                         break;
                     #endregion
+                    #region InboundSpeseficDate
+                    case CommandState.InboundTransactionSpecificDate:
+                        await dateConfig.SendInBoundMonthOfDate(callbackQuery.Message.Chat.Id);
+                        break;
+                    #endregion
 
+                    #region InboundMonth
+                    case CommandState.InboundMonth:
+                        var indateMonth = Convert.ToInt64(callbackQuery.Data?.Split("-").LastOrDefault());//get month here
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.InBoundMonth, indateMonth);//set month to cache
+                        await dateConfig.SendInboundDaysOfDate(callbackQuery.Message.Chat.Id);
+                        break;
+                    #endregion
                     #region InboundChooseBankDaily
                     case CommandState.InboundChooseBankDaily:
                         var InboundcacheDate = await CacheExtension.GetValueAsync<TransactionDto>(userIdKey + ConstKey.Transaction);
@@ -361,8 +419,32 @@ namespace Application.Services.TelegramServices.BaseMethods
                         }
                         else
                         {
-                            await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "report");
+                            await reportConfig.SendChooseReportType(callbackQuery.Message.Chat.Id);
                         }
+                        break;
+                    #endregion
+
+                    #region InboundReports
+                    case CommandState.InboundReport:
+                        await reportConfig.SendChooseTypeInboundReport(callbackQuery.Message.Chat.Id);
+                        break;
+                    #endregion
+
+                    #region OutboundReports
+                    case CommandState.OutboundReport:
+                        await reportConfig.SendChooseTypeOutboundReport(callbackQuery.Message.Chat.Id);
+                        break;
+                    #endregion
+
+                    #region OutboundTodaySummaryReports
+                    case CommandState.OutboundSummary:
+                        await reportConfig.SendOutboundTodaySummary(callbackQuery.Message.Chat.Id,callbackQuery.From.Id);
+                        break;
+                    #endregion
+
+                    #region InBoundTodaySummaryReports
+                    case CommandState.InboundSummary:
+                        await reportConfig.SendInboundTodaySummary(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
                         break;
                     #endregion
 
@@ -377,7 +459,62 @@ namespace Application.Services.TelegramServices.BaseMethods
                         }
                         else
                         {
-                            await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "remind");
+                            await reminderConfig.SendChooseMonthReminder(callbackQuery.Message.Chat.Id);
+                        }
+                        break;
+                    #endregion
+
+                    #region ChooseDayReminder
+                    case CommandState.ChooseDayReminder:
+                        var rmeinderDateMonth = Convert.ToInt64(callbackQuery.Data?.Split("-").LastOrDefault());//get month here
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.ReminderMonth, rmeinderDateMonth);//set month to cache
+                        await reminderConfig.SendChooseDayReminder(callbackQuery.Message.Chat.Id);
+                        break;
+                    #endregion
+
+                    #region ReminderAmount
+                    case CommandState.ReminderAmount:
+                        var reminderdateDay = Convert.ToInt32(callbackQuery.Data?.Split("-").LastOrDefault());//get day here
+                        var reminderMonth = await CacheExtension.GetValueAsync<int>(userIdKey + ConstKey.ReminderMonth);//set month to cache
+                        var year = DateTime.Now.Year.ToPersianYear();
+                        var chosenDate = $"{year}/{reminderMonth}/{reminderdateDay}";
+                        var remindDate = DateExtension.ConvertToEnglishDate(chosenDate);
+                        ReminderDto reminder = new();
+                        reminder.Type = ReminderType.OneTime;
+                        reminder.RemindDate = remindDate;
+                        reminder.TelegramId = callbackQuery.From.Id;
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Reminder,reminder);
+                        var messageReminder = await reminderConfig.SendReminderInsertAmount(callbackQuery.Message.Chat.Id);
+                        userSession.MessageIds.Add(messageReminder.MessageId);
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        break;
+                    #endregion
+
+
+                    #region ReminderAccept
+                    case CommandState.ReminderSubmit:
+                        ReminderDto? ReminderSubmitted = null;
+                        var cacheData = await _disCache.GetAsync(userIdKey + ConstKey.Reminder);
+                        if (cacheData is { Length: > 0 })
+                            ReminderSubmitted = JsonSerializer.Deserialize<ReminderDto>(cacheData);
+                        if (ReminderSubmitted is null)
+                        {
+                            var ErrorMessage = await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id);
+                            userSession.MessageIds.Add(ErrorMessage.MessageId);
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                            await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
+                        }
+                        else
+                        {
+                            //insert to db
+                            var mappedReminderDto = _mapper.Map<ReminderDTO>(ReminderSubmitted);
+                            await _commandDispatcher.SendAsync(new InsertReminderCommand { dto = mappedReminderDto });
+                            var InbounddescriptionMessage = await client
+                                .SendTextMessageAsync(callbackQuery.Message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);
+                            userSession.MessageIds.Add(InbounddescriptionMessage.MessageId);
+                            Task.Delay(150).Wait();
+                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                            await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                         }
                         break;
                         #endregion
@@ -394,7 +531,6 @@ namespace Application.Services.TelegramServices.BaseMethods
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                throw;
             }
 
         }
@@ -403,6 +539,7 @@ namespace Application.Services.TelegramServices.BaseMethods
     public class TransactionDto
     {
         public decimal? Amount { get; set; }
+        public DateTime? CreatedAt { get; set; }
         public TransactionType? Type { get; set; }
         public string? Description { get; set; }
         public long? TelegramId { get; set; }
@@ -412,4 +549,17 @@ namespace Application.Services.TelegramServices.BaseMethods
         public long? CategoryId { get; set; }
         public DateTime PayDateTime { get; set; } = DateTime.Now;
     }
+
+    public class ReminderDto
+    {
+        public string Description { get; set; }
+        public ReminderType Type { get; set; }
+        public bool IsExpire { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime RemindDate { get; set; }
+        public bool IsRemindMeAgain { get; set; }
+        public DateTime? RemindAgainDate { get; set; }
+        public long TelegramId { get; set; }
+    }
 }
+
