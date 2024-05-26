@@ -41,7 +41,7 @@ namespace Application.Mediator.Transactions.Query
                         Description = "موردی یافت نشد",
                         BankTransaction = "عنوان ندارد",
                     };
-                var maxAmount = await repo.Select(z => z.Amount).DefaultIfEmpty().MaxAsync();
+                var maxAmount = await repo.Select(z => z.Amount).DefaultIfEmpty().MaxAsync(cancellationToken: cancellationToken);
                 result = new()
                 {
                     SumAmount = (await repo.SumAsync(z => z.Amount)).ToString("N0").ToPersianNumber(),
