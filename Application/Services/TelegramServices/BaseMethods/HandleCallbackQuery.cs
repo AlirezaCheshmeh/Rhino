@@ -71,7 +71,7 @@ namespace Application.Services.TelegramServices.BaseMethods
             AccountConfigs accountConfig = new(_userPerchaseRepo);
             DateFunctions dateConfig = new(client);
             ReminderConfigs reminderConfig = new(client);
-            ReportConfigs reportConfig = new(client,_queryDispatcher);
+            ReportConfigs reportConfig = new(client, _queryDispatcher);
             try
             {
                 var userIdKey = callbackQuery.From.Id;
@@ -411,16 +411,16 @@ namespace Application.Services.TelegramServices.BaseMethods
                     #region Reports
                     case CommandState.Reports:
                         var IsActive = await accountConfig.CheckUserActiveAccount(userIdKey);
-                        if (!IsActive)
-                        {
-                            var message = await globalMessage.SendYouDontHaveActiveAccount(callbackQuery.Message.Chat.Id);
-                            userSession.MessageIds.Add(message.MessageId);
-                            await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
-                        }
-                        else
-                        {
-                            await reportConfig.SendChooseReportType(callbackQuery.Message.Chat.Id);
-                        }
+                        //if (!IsActive)
+                        //{
+                        //    var message = await globalMessage.SendYouDontHaveActiveAccount(callbackQuery.Message.Chat.Id);
+                        //    userSession.MessageIds.Add(message.MessageId);
+                        //    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        //}
+                        //else
+                        //{
+                        await reportConfig.SendChooseReportType(callbackQuery.Message.Chat.Id);
+                        //}
                         break;
                     #endregion
 
@@ -436,9 +436,16 @@ namespace Application.Services.TelegramServices.BaseMethods
                         break;
                     #endregion
 
+                    #region OutboundTodayReport
+                    case CommandState.OutboundTodayReport:
+                        await reportConfig.SendOutboundToday(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
+                        break;
+
+                    #endregion
+
                     #region OutboundTodaySummaryReports
                     case CommandState.OutboundSummary:
-                        await reportConfig.SendOutboundTodaySummary(callbackQuery.Message.Chat.Id,callbackQuery.From.Id);
+                        await reportConfig.SendOutboundTodaySummary(callbackQuery.Message.Chat.Id, callbackQuery.From.Id);
                         break;
                     #endregion
 
@@ -483,7 +490,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                         reminder.Type = ReminderType.OneTime;
                         reminder.RemindDate = remindDate;
                         reminder.TelegramId = callbackQuery.From.Id;
-                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Reminder,reminder);
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Reminder, reminder);
                         var messageReminder = await reminderConfig.SendReminderInsertAmount(callbackQuery.Message.Chat.Id);
                         userSession.MessageIds.Add(messageReminder.MessageId);
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);

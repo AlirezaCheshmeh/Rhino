@@ -131,6 +131,10 @@ namespace Application.Services.TelegramServices.Configurations
             $"<b>🏦 بانک بیشترین پرداختی:</b> <b>{data.BankTransaction}</b>",
             parseMode: ParseMode.Html,
             replyMarkup: inlineKeyboard);
+        } 
+        public async Task<Message> SendOutboundToday(long chatId, long telegramId)
+        {
+           
         }
     }
 }

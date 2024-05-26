@@ -353,11 +353,11 @@ namespace TelegramBot.BaseMethods
 
 
 
-                    //features satrt=====================
+                    //features start=====================
                     #region Reports
                     case CommandState.Reports:
-                        var IsActive = await accountConfig.CheckUserActiveAccount(userIdKey);
-                        if (!IsActive)
+                        var isActive = await accountConfig.CheckUserActiveAccount(userIdKey);
+                        if (!isActive)
                         {
                             var message = await globalMessage.SendYouDontHaveActiveAccount(callbackQuery.Message.Chat.Id);
                             userSession.MessageIds.Add(message.MessageId);
