@@ -40,5 +40,29 @@
 
             return src;
         }
+
+
+        public static string ConvertDayOfWeekToPersian(this string DayInEnglish)
+        {
+            switch (DayInEnglish)
+            {
+                case "Monday":
+                    return "دوشنبه";
+                case "Tuesday":
+                    return "سه شنبه";
+                case "Wednesday":
+                    return "چهار شنبه";
+                case "Thursday":
+                    return "پنج شنبه";
+                case "Friday":
+                    return "جمه";
+                case "Sunday":
+                    return "یکشنبه";
+                case "Saturday":
+                    return "شنبه";
+                default:
+                    return null;
+            }
+        }
     }
 }

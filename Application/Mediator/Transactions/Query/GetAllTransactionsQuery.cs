@@ -9,16 +9,20 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.DTOs.Shared;
 using Domain.Entities.Transactions;
+using Domain.Enums;
+using Application.Extensions;
 
 namespace Application.Mediator.Transactions.Query
 {
     public class GetAllTransactionsQuery : IQuery<ServiceRespnse<List<TransactionDTO>>>
     {
         public int PageNumber { get; set; }
+        public TransactionType? Type { get; set; }
         public int Count { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public decimal? FromPrice { get; set; }
+        public long TelegramId { get; set; }
         public decimal? ToPrice { get; set; }
         public long? CategoryId { get; set; }
         public long? BankId { get; set; }
@@ -34,7 +38,7 @@ namespace Application.Mediator.Transactions.Query
 
             public async Task<ServiceRespnse<List<TransactionDTO>>> Handle(GetAllTransactionsQuery request, CancellationToken cancellationToken)
             {
-                var Repo = _transactionRepository.GetQuery();
+                var Repo = _transactionRepository.GetQuery().Where(z => z.TelegramId == request.TelegramId);
 
                 //filters
                 if (request.CategoryId.HasValue)
@@ -49,19 +53,25 @@ namespace Application.Mediator.Transactions.Query
                     Repo = Repo.Where(z => z.CreatedAt > request.FromDate.Value);
                 if (request.ToDate.HasValue)
                     Repo = Repo.Where(z => z.CreatedAt > request.ToDate.Value);
-
+                if (request.Type.HasValue)
+                    Repo = Repo.Where(z => z.Type == request.Type.Value);
 
                 var trans = await Repo.Select(x => new TransactionDTO
                 {
                     Amount = x.Amount,
                     Description = x.Description,
+                    CreatedAt = x.CreatedAt,
+                    BankId = x.BankId,
+                    CategoryId = x.CategoryId,
                     Id = x.Id,
                     TelegramId = x.TelegramId,
                     Type = x.Type
                 }).Skip((request.PageNumber - 1) * request.Count)
                 .Take(request.Count).ToListAsync();
                 var totalCount = await Repo.CountAsync();
-                return new ServiceRespnse<List<TransactionDTO>>().OK(trans, total: totalCount);
+                var totalAmount = await Repo.SumAsync(z => z.Amount);
+                string totalResAmount = totalAmount.ToString("N0").ToPersianNumber();
+                return new ServiceRespnse<List<TransactionDTO>>().OK(trans, total: totalCount, totalAmount: totalResAmount);
             }
         }
     }

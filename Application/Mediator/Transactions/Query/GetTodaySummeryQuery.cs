@@ -3,6 +3,7 @@ using Application.Cqrs.Queris;
 using Application.Extensions;
 using Application.Mediator.Transactions.DTOs;
 using Domain.DTOs.Shared;
+using Domain.Entities.Banks;
 using Domain.Entities.Transactions;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,10 +16,12 @@ namespace Application.Mediator.Transactions.Query
         public class GetTodaySummeryQueryHandler : IQueryHandler<GetTodaySummeryQuery, ServiceRespnse<GetTodaySummaryDTO>>
         {
             private readonly IGenericRepository<Transaction> _transactionRepository;
+            private readonly IGenericRepository<Bank> _bankRepository;
 
-            public GetTodaySummeryQueryHandler(IGenericRepository<Transaction> transactionRepository)
+            public GetTodaySummeryQueryHandler(IGenericRepository<Transaction> transactionRepository, IGenericRepository<Bank> bankRepository)
             {
                 _transactionRepository = transactionRepository;
+                _bankRepository = bankRepository;
             }
 
             public async Task<ServiceRespnse<GetTodaySummaryDTO>> Handle(GetTodaySummeryQuery request, CancellationToken cancellationToken)
@@ -39,7 +42,7 @@ namespace Application.Mediator.Transactions.Query
                     SumAmount = (await repo.SumAsync(z => z.Amount)).ToString("N0").ToPersianNumber(),
                     BiggestOutBound = maxAmount.ToString("N0").ToPersianNumber(),
                     Description = (await repo.FirstOrDefaultAsync(z => z.Amount == maxAmount)).Description,
-                    BankTransaction = (await repo.FirstOrDefaultAsync(z => z.Amount == maxAmount)).Bank.Name,
+                    BankTransaction = (await _bankRepository.GetAsNoTrackingQuery().Where(x => x.Id == (repo.FirstOrDefault(z => z.Amount == maxAmount)).BankId).FirstOrDefaultAsync()).Name
                 };
                 return new ServiceRespnse<GetTodaySummaryDTO>().OK(result);
             }

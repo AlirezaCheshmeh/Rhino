@@ -22,7 +22,7 @@ namespace API.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> Test()
         {
-            return Ok(await _queryDispatcher.SendAsync(new GetOutBoundTransactionTodaySummary { TelegramId = 5690372630 }));
+            return Ok(await _queryDispatcher.SendAsync(new GetTodaySummeryQuery { TelegramId = 5690372630 }));
         }
     }
 }

@@ -126,9 +126,11 @@ namespace Application.Services.TelegramServices.BaseMethods
 
                             //report start===============================================================
                             ConstCallBackData.Report.InBound => CommandState.InboundReport,
+                            ConstCallBackData.Report.InBoundTodayReport => CommandState.InboundTodayReport,
                             ConstCallBackData.Report.InBoundTodaySummaryReport => CommandState.InboundSummary,
                             ConstCallBackData.Report.OutBoundTodaySummaryReport => CommandState.OutboundSummary,
                             ConstCallBackData.Report.OutBound => CommandState.OutboundReport,
+                            ConstCallBackData.Report.OutBoundTodayReport => CommandState.OutboundTodayReport,
                             //report end=================================================================
 
                             //bank start====================================================================

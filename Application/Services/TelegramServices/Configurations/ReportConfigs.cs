@@ -12,6 +12,14 @@ using Application.Cqrs.Commands;
 using Application.Cqrs.Queris;
 using Application.Mediator.Transactions.Query;
 using Application.Extensions;
+using static Application.Services.TelegramServices.BaseMethods.HandleUpdate;
+using Microsoft.Extensions.Caching.Distributed;
+using Domain.Entities.Transactions;
+using Application.Mediator.Transactions.DTOs;
+using Application.Common;
+using Domain.Entities.Banks;
+using Microsoft.EntityFrameworkCore;
+using Domain.Entities.Categories;
 
 namespace Application.Services.TelegramServices.Configurations
 {
@@ -20,11 +28,17 @@ namespace Application.Services.TelegramServices.Configurations
 
         private readonly ITelegramBotClient _botClient;
         private readonly IQueryDispatcher _queryDispatcher;
+        private readonly IDistributedCache _distributedCache;
+        private readonly IGenericRepository<Bank> _bankRepo;
+        private readonly IGenericRepository<Category> _catRepo;
 
-        public ReportConfigs(ITelegramBotClient botClient, IQueryDispatcher queryDispatcher)
+        public ReportConfigs(ITelegramBotClient botClient, IQueryDispatcher queryDispatcher, IDistributedCache distributedCache, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> catRepo)
         {
             _botClient = botClient;
             _queryDispatcher = queryDispatcher;
+            _distributedCache = distributedCache;
+            _bankRepo = bankRepo;
+            _catRepo = catRepo;
         }
 
 
@@ -131,10 +145,176 @@ namespace Application.Services.TelegramServices.Configurations
             $"<b>🏦 بانک بیشترین پرداختی:</b> <b>{data.BankTransaction}</b>",
             parseMode: ParseMode.Html,
             replyMarkup: inlineKeyboard);
-        } 
-        public async Task<Message> SendOutboundToday(long chatId, long telegramId)
-        {
-           
         }
+        public async Task SendOutboundToday(long chatId, long telegramId, UserSession session)
+        {
+            var menu = new MenuConfigs(_botClient, _distributedCache);
+            var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = 1, FromDate = DateTime.Now.Date, ToDate = DateTime.Now.Date, TelegramId = telegramId, Type = Domain.Enums.TransactionType.OutBound });
+            if (data.Data.Count is 0)
+            {
+                var message = await _botClient.SendTextMessageAsync(chatId, "<b>تراکنشی پرداختی برای امروز وجود ندارد</b> ⚠", parseMode: ParseMode.Html);
+                session.MessageIds.Add(message.MessageId);
+                await Task.Delay(300);
+                await menu.RollBackToMenu(telegramId, chatId, session);
+            }
+            else
+            {
+                var transactions = data.Data;
+                var inlineKeyboard = await GenerateOutBoundPagination(transactions, 1, data.TotalCount.Value);
+                await _botClient.SendTextMessageAsync(chatId, $"💸 <b>تراکنش‌های پرداختی امروز</b> \n 📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()} \n 📝 شماره صفحه:{1.ToString().ToPersianNumber()} </b> \n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: inlineKeyboard);
+            }
+        }
+
+
+        public async Task SendInboundToday(long chatId, long telegramId, UserSession session)
+        {
+            var menu = new MenuConfigs(_botClient, _distributedCache);
+            var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = 1, FromDate = DateTime.Now.Date, ToDate = DateTime.Now.Date, TelegramId = telegramId, Type = Domain.Enums.TransactionType.InBound });
+            if (data.Data.Count is 0)
+            {
+                var message = await _botClient.SendTextMessageAsync(chatId, "<b>تراکنشی دریافتی برای امروز وجود ندارد</b> ⚠", parseMode: ParseMode.Html);
+                session.MessageIds.Add(message.MessageId);
+                await Task.Delay(300);
+                await menu.RollBackToMenu(telegramId, chatId, session);
+            }
+            else
+            {
+                var transactions = data.Data;
+                var inlineKeyboard = await GenerateInBoundPagination(transactions, 1,data.TotalCount.Value);
+                await _botClient.SendTextMessageAsync(chatId, $"💸 <b>تراکنش‌های دریافتی امروز</b>  \n📉  <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}  \n📝 شماره صفحه:{1.ToString().ToPersianNumber()} </b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b> ", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: inlineKeyboard);
+            }
+        }
+
+
+        // Method to generate inline keyboard buttons
+        public async Task<InlineKeyboardMarkup> GenerateOutBoundPagination(List<TransactionDTO> transactions, int currentPage, int totalCount)
+        {
+            int rowsPerPage = 5;
+            var inlineKeyboardButtons = new List<List<InlineKeyboardButton>>();
+
+
+            int counter = 0;
+            foreach (var transaction in transactions)
+            {
+                counter++;
+                var bankName = (await _bankRepo.GetAsNoTrackingQuery().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
+                var row = new List<InlineKeyboardButton>
+                {
+                    InlineKeyboardButton.WithCallbackData(transaction.CreatedAt.Value.ToString("HH:ss").ToPersianNumber(), $"outboundtransaction_{transaction.Id}"),
+                    InlineKeyboardButton.WithCallbackData(bankName, $"outboundtransaction_{transaction.Id}"),
+                    InlineKeyboardButton.WithCallbackData($"{transaction.Amount.ToString("N0").ToPersianNumber()} تومان", $"outboundtransaction_{transaction.Id}"),
+                    InlineKeyboardButton.WithCallbackData((((currentPage - 1) * rowsPerPage) + counter).ToString().ToPersianNumber(), $"outboundtransaction_{transaction.Id}"),
+                };
+                inlineKeyboardButtons.Add(row);
+            }
+
+            currentPage = currentPage == 0 ? 1 : currentPage;
+            // Add pagination buttons
+            var paginationButtons = new List<InlineKeyboardButton>();
+            if (currentPage > 1)
+            {
+                paginationButtons.Add(InlineKeyboardButton.WithCallbackData(" صفحه قبل »", $"outboundpage_{currentPage - 1}"));
+            }
+            if (totalCount >= currentPage * rowsPerPage)
+            {
+                paginationButtons.Add(InlineKeyboardButton.WithCallbackData("« صفحه بعد", $"outboundpage_{currentPage + 1}"));
+            }
+            if (paginationButtons.Any())
+            {
+                inlineKeyboardButtons.Add(paginationButtons);
+            }
+            var globalbuttons = new List<InlineKeyboardButton>();
+            globalbuttons.AddRange(new List<InlineKeyboardButton> {
+                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+            });
+            inlineKeyboardButtons.Add(globalbuttons);
+            return new InlineKeyboardMarkup(inlineKeyboardButtons);
+        }
+
+        public async Task<InlineKeyboardMarkup> GenerateInBoundPagination(List<TransactionDTO> transactions, int currentPage, int totalCount)
+        {
+            int rowsPerPage = 5;
+            var inlineKeyboardButtons = new List<List<InlineKeyboardButton>>();
+
+
+            int counter = 0;
+            foreach (var transaction in transactions)
+            {
+                counter++;
+                var bankName = (await _bankRepo.GetAsNoTrackingQuery().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
+                var row = new List<InlineKeyboardButton>
+                {
+                    InlineKeyboardButton.WithCallbackData(transaction.CreatedAt.Value.ToString("HH:ss").ToPersianNumber(), $"inboundtransaction_{transaction.Id}"),
+                    InlineKeyboardButton.WithCallbackData(bankName, $"inboundtransaction_{transaction.Id}"),
+                    InlineKeyboardButton.WithCallbackData($"{transaction.Amount.ToString("N0").ToPersianNumber()} تومان", $"inboundtransaction_{transaction.Id}"),
+                    InlineKeyboardButton.WithCallbackData((((currentPage - 1) * rowsPerPage) + counter).ToString().ToPersianNumber(), $"inboundtransaction_{transaction.Id}"),
+                };
+                inlineKeyboardButtons.Add(row);
+            }
+
+            currentPage = currentPage == 0 ? 1 : currentPage;
+            // Add pagination buttons
+            var paginationButtons = new List<InlineKeyboardButton>();
+            if (currentPage > 1)
+            {
+                paginationButtons.Add(InlineKeyboardButton.WithCallbackData(" صفحه قبل »", $"inboundpage_{currentPage - 1}"));
+            }
+            if (totalCount >= currentPage * rowsPerPage)
+            {
+                paginationButtons.Add(InlineKeyboardButton.WithCallbackData("« صفحه بعد", $"inboundpage_{currentPage + 1}"));
+            }
+            if (paginationButtons.Any())
+            {
+                inlineKeyboardButtons.Add(paginationButtons);
+            }
+            var globalbuttons = new List<InlineKeyboardButton>();
+            globalbuttons.AddRange(new List<InlineKeyboardButton> { 
+                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+            });
+            inlineKeyboardButtons.Add(globalbuttons);
+            return new InlineKeyboardMarkup(inlineKeyboardButtons);
+        }
+
+
+        public async Task SendInboundTransactionDetail(long chatId,int messageId,TransactionDTO transaction)
+        {
+            var bankName = (await _bankRepo.GetAsNoTrackingQuery().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
+            var CatName = (await _catRepo.GetAsNoTrackingQuery().Where(z => z.Id == transaction.CategoryId.Value).FirstOrDefaultAsync()).Name;
+            var message = new StringBuilder($"{ConstMessage.OutboundTransactionPreview} \n  مبلغ: {transaction.Amount.ToString("N0").ToPersianNumber()}\n" +
+                          $"بابت: {transaction.Description}\n" +
+                          $"دسته بندی: {CatName}\n" +
+                          $"ساعت: {transaction.CreatedAt.Value.ToString("HH:ss").ToPersianNumber()}\n" +
+                          $"بانک: {bankName}\n" +
+                           $"روز: {transaction.CreatedAt.Value.DayOfWeek.ToDisplay().ConvertDayOfWeekToPersian()}\n" +
+                          $"نوع: {transaction.Type.ToDisplay()}\n");
+            var globalbuttons = new List<InlineKeyboardButton>();
+            globalbuttons.AddRange(new List<InlineKeyboardButton> {
+                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+                InlineKeyboardButton.WithCallbackData(ConstMessage.Back, "inboundpage_1") ,
+            });
+            var buttons = new InlineKeyboardMarkup(globalbuttons);
+            await _botClient.EditMessageTextAsync(chatId,messageId, message.ToString(),replyMarkup:buttons);
+        }
+
+        public async Task SendOutboundTransactionDetail(long chatId, int messageId, TransactionDTO transaction)
+        {
+            var bankName = (await _bankRepo.GetAsNoTrackingQuery().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
+            var CatName = (await _catRepo.GetAsNoTrackingQuery().Where(z => z.Id == transaction.CategoryId.Value).FirstOrDefaultAsync()).Name;
+            var message = new StringBuilder($"{ConstMessage.OutboundTransactionPreview} \n  مبلغ: {transaction.Amount.ToString("N0").ToPersianNumber()}\n" +
+                          $"بابت: {transaction.Description}\n" +
+                          $"دسته بندی: {CatName}\n" +
+                          $"ساعت: {transaction.CreatedAt.Value.ToString("HH:ss").ToPersianNumber()}\n" +
+                          $"بانک: {bankName}\n" +
+                          $"روز: {transaction.CreatedAt.Value.DayOfWeek.ToDisplay().ConvertDayOfWeekToPersian()}\n" +
+                          $"نوع: {transaction.Type.ToDisplay()}\n");
+            var globalbuttons = new List<InlineKeyboardButton>();
+            globalbuttons.AddRange(new List<InlineKeyboardButton> {
+                InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
+                InlineKeyboardButton.WithCallbackData(ConstMessage.Back, "outboundpage_1") ,
+            });
+            var buttons = new InlineKeyboardMarkup(globalbuttons);
+            await _botClient.EditMessageTextAsync(chatId, messageId, message.ToString(), replyMarkup: buttons);
+        }
+
     }
 }
