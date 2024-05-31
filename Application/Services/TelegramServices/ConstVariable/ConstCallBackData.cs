@@ -40,6 +40,7 @@ namespace Application.Services.TelegramServices.ConstVariable
         public static class Reminder
         {
             public const string ChooseReminderMonth = "remindermonth";
+            public const string RemindMeAgain = "remindmeagain-";
             public const string ChooseReminderDay = "reminderday";
             public const string RemindDescription = "reminddescription";
             public const string RemindAmount = "remindamount";

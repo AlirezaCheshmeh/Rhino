@@ -27,7 +27,7 @@ namespace Application.Mediator.Transactions.Query
             public async Task<ServiceRespnse<GetTodaySummaryDTO>> Handle(GetTodaySummeryQuery request, CancellationToken cancellationToken)
             {
                 GetTodaySummaryDTO? result;
-                var repo = _transactionRepository.GetAsNoTrackingQuery().Where(z => z.TelegramId == request.TelegramId && z.Type == Domain.Enums.TransactionType.InBound &&  z.CreatedAt.Date == DateTime.Now.Date);
+                var repo = _transactionRepository.GetAsNoTrackingQuery().Where(z => z.TelegramId == request.TelegramId && z.Type == Domain.Enums.TransactionType.InBound && z.CreatedAt.Date == DateTime.Now.Date);
                 if (repo is null || repo.Count() is 0)
                     result = new()
                     {
@@ -36,14 +36,17 @@ namespace Application.Mediator.Transactions.Query
                         Description = "موردی یافت نشد",
                         BankTransaction = "عنوان ندارد",
                     };
-                var maxAmount =await repo.Select(z => z.Amount).DefaultIfEmpty().MaxAsync();
-                result = new GetTodaySummaryDTO
+                else
                 {
-                    SumAmount = (await repo.SumAsync(z => z.Amount)).ToString("N0").ToPersianNumber(),
-                    BiggestOutBound = maxAmount.ToString("N0").ToPersianNumber(),
-                    Description = (await repo.FirstOrDefaultAsync(z => z.Amount == maxAmount)).Description,
-                    BankTransaction = (await _bankRepository.GetAsNoTrackingQuery().Where(x => x.Id == (repo.FirstOrDefault(z => z.Amount == maxAmount)).BankId).FirstOrDefaultAsync()).Name
-                };
+                    var maxAmount = await repo.Select(z => z.Amount).DefaultIfEmpty().MaxAsync();
+                    result = new GetTodaySummaryDTO
+                    {
+                        SumAmount = (await repo.SumAsync(z => z.Amount)).ToString("N0").ToPersianNumber(),
+                        BiggestOutBound = maxAmount.ToString("N0").ToPersianNumber(),
+                        Description = (await repo.FirstOrDefaultAsync(z => z.Amount == maxAmount)).Description,
+                        BankTransaction = (await _bankRepository.GetAsNoTrackingQuery().Where(x => x.Id == (repo.FirstOrDefault(z => z.Amount == maxAmount)).BankId).FirstOrDefaultAsync()).Name
+                    };
+                }
                 return new ServiceRespnse<GetTodaySummaryDTO>().OK(result);
             }
         }

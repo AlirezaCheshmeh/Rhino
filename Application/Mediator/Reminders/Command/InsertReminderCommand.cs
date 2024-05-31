@@ -30,7 +30,8 @@ namespace Application.Mediator.Reminders.Command
                 await _reminderRepository.AddAsync(new Reminder
                 {
                     TelegramId = request.dto.TelegramId,
-                    Amount = request.dto.Mount,
+                    Amount = request.dto.Amount,
+                    ChatId = request.dto.ChatId,
                     Description = request.dto.Description,
                     IsRemindMeAgain = request.dto.IsRemindMeAgain,
                     RemindDate = request.dto.RemindDate,

@@ -21,6 +21,7 @@ using MediatR;
 using Application.Services.TelegramServices.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using static System.Net.WebRequestMethods;
 
 namespace Application.BackgroundServices
 {

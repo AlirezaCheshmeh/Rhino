@@ -30,6 +30,8 @@ using Application.Mediator.Reminders.DTOs;
 using Application.Mediator.Reminders.Command;
 using Application.Cqrs.Queris;
 using Application.Mediator.Transactions.Query;
+using Domain.Entities.Reminders;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
@@ -44,10 +46,11 @@ namespace Application.Services.TelegramServices.BaseMethods
         private readonly IGenericRepository<Category> _categoryRepo;
         private readonly IGenericRepository<Plan> _planRepo;
         private readonly IGenericRepository<UserPurchase> _userPerchaseRepo;
+        private readonly IGenericRepository<Domain.Entities.Reminders.Reminder> _reminderRepository;
         private readonly IMapper _mapper;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonServices, ICommandDispatcher commandDispatcher, IMapper mapper, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo, IGenericRepository<Plan> planRepo, IGenericRepository<UserPurchase> userPerchaseRepo, IServiceScopeFactory serviceScopeFactory, IQueryDispatcher queryDispatcher)
+        public HandleCallbackQuery(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonServices, ICommandDispatcher commandDispatcher, IMapper mapper, IGenericRepository<Bank> bankRepo, IGenericRepository<Category> categoryRepo, IGenericRepository<Plan> planRepo, IGenericRepository<UserPurchase> userPerchaseRepo, IServiceScopeFactory serviceScopeFactory, IQueryDispatcher queryDispatcher, IGenericRepository<Domain.Entities.Reminders.Reminder> reminderRepository)
         {
             _cache = cache;
             _disCache = disCache;
@@ -60,6 +63,7 @@ namespace Application.Services.TelegramServices.BaseMethods
             _userPerchaseRepo = userPerchaseRepo;
             _serviceScopeFactory = serviceScopeFactory;
             _queryDispatcher = queryDispatcher;
+            _reminderRepository = reminderRepository;
         }
         public async Task HandleCallbackQueryAsync(ITelegramBotClient client, CallbackQuery callbackQuery, UserSession userSession)
         {
@@ -86,6 +90,20 @@ namespace Application.Services.TelegramServices.BaseMethods
                 {
                     userSession.MessageIds.Add(callbackQuery.Message.MessageId);
                     await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                }
+                //handle reminder
+                if (callbackQuery.Data.StartsWith("remindmeagain-"))
+                {
+                    var reminderId = long.Parse(callbackQuery.Data.Split('-')[1]);
+                    var reminder = await _reminderRepository.GetQuery().Where(z => z.Id == reminderId).FirstOrDefaultAsync();
+                    reminder.IsExpire = false;
+                    await _reminderRepository.UpdateAsync(reminder,cancellationToken:default);
+                    var message =  await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "✔️ <b>متوجه شدم، مجدد یادآوری میکنم</b>", parseMode:ParseMode.Html);
+                    var reminderMessageId = await CacheExtension.GetValueAsync<int>(userIdKey+ConstKey.ReminderMessageId);
+                    await Task.Delay(500);
+                    await client.DeleteMessageAsync(callbackQuery.Message.Chat.Id,message.MessageId);
+                    await client.DeleteMessageAsync(callbackQuery.Message.Chat.Id,reminderMessageId);
+                    await menu.RollBackToMenu(userIdKey,callbackQuery.Message.Chat.Id,userSession);
                 }
                 //handle pagination
                 //outbound
@@ -525,7 +543,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                         }
                         break;
                     #endregion
-
+                   
                     #region ChooseDayReminder
                     case CommandState.ChooseDayReminder:
                         var rmeinderDateMonth = Convert.ToInt64(callbackQuery.Data?.Split("-").LastOrDefault());//get month here
@@ -570,6 +588,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                         {
                             //insert to db
                             var mappedReminderDto = _mapper.Map<ReminderDTO>(ReminderSubmitted);
+                            mappedReminderDto.ChatId = callbackQuery.Message.Chat.Id;
                             await _commandDispatcher.SendAsync(new InsertReminderCommand { dto = mappedReminderDto });
                             var InbounddescriptionMessage = await client
                                 .SendTextMessageAsync(callbackQuery.Message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);

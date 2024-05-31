@@ -301,8 +301,7 @@ namespace Application.Services.TelegramServices.BaseMethods
             OutboundTodayReport,
             OutboundSummary,
             OutboundReport,
-
-
+            RemindMeAgain,
         }
 
     }

@@ -41,7 +41,7 @@ namespace Application.Mediator.Reminders.Command
                 {
                     TelegramId = request.dto.TelegramId,
                     Id = request.dto.Id,
-                    Amount = request.dto.Mount,
+                    Amount = request.dto.Amount,
                     Description = request.dto.Description,
                     IsRemindMeAgain = request.dto.IsRemindMeAgain,
                     RemindDate = request.dto.RemindDate,

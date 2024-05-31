@@ -68,11 +68,7 @@ namespace Application.Extensions
             Services.AddScoped<IHandleCallbackQuery, HandleCallbackQuery>();
             Services.AddScoped<IHandleMessage, HandleMessage>();
             Services.AddScoped<IDynamicButtonsServices,DynamicButtonsServices>();
-            Services.AddHttpClient<ITelegramBotClient, TelegramBotClient>((httpClient, sp) =>
-            {
-                var telegramSettings = sp.GetRequiredService<IOptions<TelegramSettings>>().Value;
-                return new TelegramBotClient(telegramSettings.TelegramKey, httpClient);
-            });
+         
 
 
 
