@@ -74,6 +74,7 @@ namespace Application.BackgroundServices
                 catch (Exception ex)
                 {
                     hasRun = false;
+                    _logger.LogError($"bot has error {ex.Message}:",ex);
                     Console.WriteLine(ex);
                 }
 

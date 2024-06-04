@@ -26,7 +26,7 @@ namespace API.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> Test()
         {
-            return Ok(await _commandDispatcher.SendAsync(new SendTelegramReminderCommand()));
+            return Ok(await _queryDispatcher.SendAsync(new GetAllBankQuery { Count = 10,PageNumber=1}));
         }
     }
 }
