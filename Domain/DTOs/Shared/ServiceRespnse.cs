@@ -18,7 +18,7 @@ namespace Domain.DTOs.Shared;
 
 public interface IServiceResponse<T>
 {
-    ServiceRespnse<T> OK(T data, int? total, HttpStatusCode status = HttpStatusCode.OK);
+    ServiceRespnse<T> OK(T data, int? total, HttpStatusCode status = HttpStatusCode.OK,string totalAmount = null);
     ServiceRespnse<T> Failed(HttpStatusCode status, Hashtable errors);
 }
 
@@ -28,6 +28,7 @@ public class ServiceRespnse<T> : IServiceResponse<T>
     public HttpStatusCode StatusCode { get; set; }
     public bool IsSuccess { get; set; }
     public T Data { get; set; }
+    public string TotalAmount { get; set; }
     public int? TotalCount { get; set; }
     public Hashtable Errors { get; set; }
 
@@ -36,9 +37,9 @@ public class ServiceRespnse<T> : IServiceResponse<T>
         return new ServiceRespnse<T>() { IsSuccess = false, Errors = errors, Message = "Operation Failed", StatusCode = StatusCode };
     }
 
-    public ServiceRespnse<T> OK(T data, int? total = null, HttpStatusCode status = HttpStatusCode.OK)
+    public ServiceRespnse<T> OK(T data, int? total = null, HttpStatusCode status = HttpStatusCode.OK, string totalAmount = null)
     {
-        return new ServiceRespnse<T>() { IsSuccess = true, Data = data, TotalCount = total };
+        return new ServiceRespnse<T>() { IsSuccess = true, Data = data, TotalCount = total,TotalAmount =  totalAmount};
     }
 }
 

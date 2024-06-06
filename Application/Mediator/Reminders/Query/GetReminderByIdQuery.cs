@@ -29,7 +29,7 @@ namespace Application.Mediator.Reminders.Query
                     TelegramId = z.TelegramId,
                     Id = z.Id,
                     IsRemindMeAgain = z.IsRemindMeAgain,
-                    Mount = z.Amount,
+                    Amount = z.Amount,
                     RemindAgainDate = z.RemindAgainDate,
                     RemindDate = z.RemindDate
                 }).FirstOrDefaultAsync(cancellationToken: cancellationToken);

@@ -10,29 +10,35 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Domain.DTOs.Shared;
 using Domain.Entities.Reminders;
+using Microsoft.Extensions.Configuration;
+using Application.Extensions;
+using Telegram.Bot.Types.Enums;
 
 namespace Application.Mediator.Reminders.Command
 {
     public class SendSnewsTelegramReminderCommand : ICommand<ServiceRespnse>
     {
-        public class SendSnewsTelegramReminderCommandHandler : ICommandHandler<SendTelegramReminderCommand, ServiceRespnse>
+        public class SendSnewsTelegramReminderCommandHandler : ICommandHandler<SendSnewsTelegramReminderCommand, ServiceRespnse>
         {
             private readonly IGenericRepository<Reminder> _reminderRepository;
-
-            public SendSnewsTelegramReminderCommandHandler(IGenericRepository<Reminder> reminderRepository)
+            private readonly IConfiguration _configuration;
+            public SendSnewsTelegramReminderCommandHandler(IGenericRepository<Reminder> reminderRepository, IConfiguration configuration)
             {
                 _reminderRepository = reminderRepository;
+                _configuration = configuration;
             }
-            public async Task<ServiceRespnse> Handle(SendTelegramReminderCommand request, CancellationToken cancellationToken)
+            public async Task<ServiceRespnse> Handle(SendSnewsTelegramReminderCommand request, CancellationToken cancellationToken)
             {
                 var reminders = await _reminderRepository.GetAsNoTrackingQuery().Where(z => z.IsRemindMeAgain && z.RemindAgainDate.Value == DateTime.Now.Date && !z.IsExpire).ToListAsync();
 
                 //telegram config
-                var ApiKey = "7103099486:AAGyvP7tji0wMat1NqlDgTJitlsavFtzcGg";
+                var ApiKey = _configuration["TelegramSettings:TelegramKey"];
                 reminders.ForEach(z =>
                 {
-                    TelegramSendMessage(ApiKey, z.TelegramId.ToString(), $"با سلام جهت یادآوری به قیمت {z.Amount}");
+                    TelegramSendMessage(ApiKey, z.TelegramId.ToString(), $"<b> با سلام جهت یادآوری به قیمت {z.Amount.ToString().ToPersianNumber()} \n بابت:{z.Description}</b>");
+                    z.IsExpire = true;
                 });
+                await _reminderRepository.UpdateRangeAsync(reminders,cancellationToken);
                 return new ServiceRespnse().OK();
 
             }

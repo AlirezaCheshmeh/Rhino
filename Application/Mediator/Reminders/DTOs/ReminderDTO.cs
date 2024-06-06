@@ -9,7 +9,8 @@ namespace Application.Mediator.Reminders.DTOs
     public class ReminderDTO
     {
         public string Description { get; set; }
-        public decimal Mount { get; set; }
+        public long ChatId { get; set; }
+        public decimal Amount { get; set; }
         public DateTime RemindDate { get; set; }
         public bool IsRemindMeAgain { get; set; } = false;
         public DateTime? RemindAgainDate { get; set; }

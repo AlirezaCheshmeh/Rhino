@@ -8,6 +8,7 @@ namespace Application.Services.TelegramServices.ConstVariable
 {
     public static class ConstKey
     {
+        public const string ReminderMessageId = "-ReminderMessageId";
         public const string Session = "-Session";
         public const string Transaction = "-Transaction";
         public const string Reminder = "-Reminder";

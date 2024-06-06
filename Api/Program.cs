@@ -34,7 +34,7 @@ builder.Services.AddCors(options => options.AddPolicy("myPol", builder =>
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.Console()
-    .WriteTo.File("logs/myBeautifulLog-.text", rollingInterval: RollingInterval.Day)
+    .WriteTo.File("Applogs/myBeautifulLog-.text", rollingInterval: RollingInterval.Day)
     .CreateLogger();//use for file
 builder.Host.UseSerilog();
 

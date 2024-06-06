@@ -11,6 +11,7 @@ namespace Domain.Entities.Reminders
     public class Reminder : BaseEntity<long>
     {
         public string Description { get; set; }
+        public long ChatId { get; set; }
         public ReminderType Type { get; set; }
         public bool IsExpire { get; set; }
         public decimal Amount { get; set; }

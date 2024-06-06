@@ -37,18 +37,21 @@ namespace Application.Mediator.Transactions.Query
                     result = new()
                     {
                         SumAmount = "0".ToPersianNumber(),
-                        BiggestOutBound ="0".ToPersianNumber(),
+                        BiggestOutBound = "0".ToPersianNumber(),
                         Description = "موردی یافت نشد",
                         BankTransaction = "عنوان ندارد",
                     };
-                var maxAmount = await repo.Select(z => z.Amount).DefaultIfEmpty().MaxAsync(cancellationToken: cancellationToken);
-                result = new()
+                else
                 {
-                    SumAmount = (await repo.SumAsync(z => z.Amount)).ToString("N0").ToPersianNumber(),
-                    BiggestOutBound = maxAmount.ToString("N0").ToPersianNumber(),
-                    Description = (await repo.FirstOrDefaultAsync(z => z.Amount == maxAmount)).Description,
-                    BankTransaction = (await _bankRepo.GetAsNoTrackingQuery().Where(x => x.Id == (repo.FirstOrDefault(z => z.Amount == maxAmount)).BankId).FirstOrDefaultAsync()).Name,
-                };
+                    var maxAmount = await repo.Select(z => z.Amount).DefaultIfEmpty().MaxAsync(cancellationToken: cancellationToken);
+                    result = new()
+                    {
+                        SumAmount = (await repo.SumAsync(z => z.Amount)).ToString("N0").ToPersianNumber(),
+                        BiggestOutBound = maxAmount.ToString("N0").ToPersianNumber(),
+                        Description = (await repo.FirstOrDefaultAsync(z => z.Amount == maxAmount)).Description,
+                        BankTransaction = (await _bankRepo.GetAsNoTrackingQuery().Where(x => x.Id == (repo.FirstOrDefault(z => z.Amount == maxAmount)).BankId).FirstOrDefaultAsync()).Name,
+                    };
+                }
                 return new ServiceRespnse<GetTodaySummaryDTO>().OK(result);
             }
         }

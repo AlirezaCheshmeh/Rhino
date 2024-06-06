@@ -78,6 +78,7 @@ namespace Application.Services.TelegramServices.Configurations
             await _disCache.RemoveAsync(userIdKey + ConstKey.Session);
             await _disCache.RemoveAsync(userIdKey + ConstKey.InBoundMonth);
             await _disCache.RemoveAsync(userIdKey + ConstKey.OutBoundMonth);
+            await _disCache.RemoveAsync(userIdKey + ConstKey.ReminderMessageId);
         }
 
 

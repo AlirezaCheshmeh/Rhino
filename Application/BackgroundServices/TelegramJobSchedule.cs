@@ -21,6 +21,7 @@ using MediatR;
 using Application.Services.TelegramServices.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using static System.Net.WebRequestMethods;
 
 namespace Application.BackgroundServices
 {
@@ -73,6 +74,7 @@ namespace Application.BackgroundServices
                 catch (Exception ex)
                 {
                     hasRun = false;
+                    _logger.LogError($"bot has error {ex.Message}:",ex);
                     Console.WriteLine(ex);
                 }
 

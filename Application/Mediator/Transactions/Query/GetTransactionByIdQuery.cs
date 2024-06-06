@@ -27,10 +27,13 @@ namespace Application.Mediator.Transactions.Query
                 var trans = await _transactionRepository.GetQuery().Where(z => z.Id == request.Id).Select(x => new TransactionDTO
                 {
                     Amount = x.Amount,
+                    CategoryId = x.CategoryId,
+                    BankId = x.BankId,
                     Description = x.Description,
                     Id = request.Id,
                     TelegramId = x.TelegramId,
-                    Type = x.Type
+                    Type = x.Type,
+                    CreatedAt = x.CreatedAt
                 }).FirstOrDefaultAsync();
                 errors.Add("id", "can not find by this id");
                 if (trans is null)

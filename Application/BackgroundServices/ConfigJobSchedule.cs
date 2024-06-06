@@ -22,16 +22,12 @@ namespace Application.BackgroundServices
             using (var scope = _serviceProvider.CreateScope())
             {
 
-                await Task.Delay(1);
-                var targetDate = new DateTime(2020, 01, 01, 1, 0, 0);
-                targetDate = targetDate.ToUniversalTime();//21:30 daily
+               
                 try
                 {
-                    RecurringJob.AddOrUpdate("SendTelegramRemindMessage", () => SendReminderTelegramMessage(), Cron.Daily(Convert.ToInt32(targetDate.ToString("HH")), targetDate.Day));
-                    RecurringJob.AddOrUpdate("SendTelegramPeriodRemindMessage", () => SendPeriodReminderTelegramMessage(), Cron.Daily(Convert.ToInt32(targetDate.ToString("HH")), targetDate.Day));
-                    RecurringJob.AddOrUpdate("SNewsForRemindMeAgain", () => SnewsSend(), Cron.Daily(Convert.ToInt32(targetDate.ToString("HH")), targetDate.Day));
+                    RecurringJob.AddOrUpdate("SendTelegramRemindMessage", () => SendReminderTelegramMessage(), Cron.Minutely());
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
 
                     throw;
@@ -49,19 +45,19 @@ namespace Application.BackgroundServices
             await commandDispacher.SendAsync(new SendTelegramReminderCommand());
         }
 
-        public async Task SendPeriodReminderTelegramMessage()
-        {
-            using var scope = _serviceProvider.CreateScope();
-            var commandDispacher = scope.ServiceProvider.GetRequiredService<ICommandDispatcher>();
+        //public async Task SendPeriodReminderTelegramMessage()
+        //{
+        //    using var scope = _serviceProvider.CreateScope();
+        //    var commandDispacher = scope.ServiceProvider.GetRequiredService<ICommandDispatcher>();
 
-            await commandDispacher.SendAsync(new SendEventPayTelegramMessageCommand());
-        }
-        public async Task SnewsSend()
-        {
-            using var scope = _serviceProvider.CreateScope();
-            var commandDispacher = scope.ServiceProvider.GetRequiredService<ICommandDispatcher>();
+        //    await commandDispacher.SendAsync(new SendEventPayTelegramMessageCommand());
+        //}
+        //public async Task SnewsSend()
+        //{
+        //    using var scope = _serviceProvider.CreateScope();
+        //    var commandDispacher = scope.ServiceProvider.GetRequiredService<ICommandDispatcher>();
 
-            await commandDispacher.SendAsync(new SendSnewsTelegramReminderCommand());
-        }
+        //    await commandDispacher.SendAsync(new SendSnewsTelegramReminderCommand());
+        //}
     }
 }
