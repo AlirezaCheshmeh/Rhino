@@ -59,31 +59,24 @@ namespace Application.Extensions
             return year;
         }
 
-        public static string ConvertDayOWeekToPersian(string DayInEnglish)
+        public static string ConvertDayOfWeekToPersian(this DayOfWeek dayOfWeek)
         {
-            switch (DayInEnglish)
+            switch (dayOfWeek)
             {
-                case "monday":
+                case DayOfWeek.Monday:
                     return "دوشنبه";
-                    break;
-                case "tuesday":
-                    return "سه شنبه";
-                    break;
-                case "wednesday":
-                    return "چهار شنبه";
-                    break;
-                case "thursday":
-                    return "پنج شنبه";
-                    break;
-                case "friday":
-                    return "جمه";
-                    break;
-                case "sunday":
-                    return "یکشنبه";
-                    break;
-                case "saturday":
+                case DayOfWeek.Tuesday:
+                    return "سه‌شنبه";
+                case DayOfWeek.Wednesday:
+                    return "چهارشنبه";
+                case DayOfWeek.Thursday:
+                    return "پنج‌شنبه";
+                case DayOfWeek.Friday:
+                    return "جمعه";
+                case DayOfWeek.Saturday:
                     return "شنبه";
-                    break;
+                case DayOfWeek.Sunday:
+                    return "یکشنبه";
                 default:
                     return null;
             }

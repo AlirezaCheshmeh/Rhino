@@ -50,9 +50,9 @@ namespace Application.Mediator.Transactions.Query
                 if (request.ToPrice.HasValue)
                     Repo = Repo.Where(z => z.Amount > request.ToPrice.Value);
                 if (request.FromDate.HasValue)
-                    Repo = Repo.Where(z => z.CreatedAt > request.FromDate.Value);
+                    Repo = Repo.Where(z => z.CreatedAt.Date >= request.FromDate.Value.Date);
                 if (request.ToDate.HasValue)
-                    Repo = Repo.Where(z => z.CreatedAt > request.ToDate.Value);
+                    Repo = Repo.Where(z => z.CreatedAt.Date <= request.ToDate.Value.Date);
                 if (request.Type.HasValue)
                     Repo = Repo.Where(z => z.Type == request.Type.Value);
 

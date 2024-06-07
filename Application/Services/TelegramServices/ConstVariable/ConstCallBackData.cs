@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.Services.TelegramServices.BaseMethods;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,10 +32,30 @@ namespace Application.Services.TelegramServices.ConstVariable
         {
             public const string InBound = "inboundreport";
             public const string InBoundTodayReport = "inboundtodayreport";
+            public const string InboundToday = "inboundtoday";
+            public const string InboundYesterday = "inboundyesterday";
+            public const string InboundLastWeek = "inboundlastweek";
+            public const string InboundLastMonth = "inboundlastmonth";
+            public const string OutboundToday = "outboundtoday";
+            public const string OutboundYesterday = "outboundyesterday";
+            public const string OutboundLastWeek = "outboundlastweek";
+            public const string OutboundLastMonth = "outboundlastmonth";
             public const string InBoundTodaySummaryReport = "inboundtodaysummaryreport";
             public const string OutBound = "outboundreport";
             public const string OutBoundTodayReport = "outboundtodayreport";
             public const string OutBoundTodaySummaryReport = "outboundtodaysummaryreport";
+            public const string InBoundYesterdayReport = "inboundyesterdayreport";
+            public const string InBoundYesterdaySummaryReport = "inboundyesterdaysummaryreport";
+            public const string OutBoundYesterdayReport = "outboundyesterdayreport";
+            public const string OutBoundYesterdaySummaryReport = "outboundyesterdaysummaryreport";
+            public const string InBoundLastWeekReport = "inboundlastweekreport";
+            public const string InBoundLastWeekSummaryReport = "inboundlastweeksummaryreport";
+            public const string OutBoundLastWeekReport = "outboundlastweekreport";
+            public const string OutBoundLastWeekSummaryReport = "outboundlastweeksummaryreport";
+            public const string InBoundLastMonthReport = "inboundlastmonthreport";
+            public const string InBoundLastMonthSummaryReport = "inboundlastmonthsummaryreport";
+            public const string OutBoundLastMonthReport = "outboundlastmonthreport";
+            public const string OutBoundLastMonthSummaryReport = "outboundlastmonthsummaryreport";
         }
 
         public static class Reminder

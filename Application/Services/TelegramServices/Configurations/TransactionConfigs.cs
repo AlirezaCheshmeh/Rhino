@@ -126,7 +126,7 @@ namespace Application.Services.TelegramServices.Configurations
         {
             var bankName = (await _bankRepository.GetAsNoTrackingQuery().Where(z => z.Id == transaction.BankId.Value).FirstOrDefaultAsync()).Name;
             var CatName = (await _categoryRepository.GetAsNoTrackingQuery().Where(z => z.Id == transaction.CategoryId.Value).FirstOrDefaultAsync()).Name;
-            var message = new StringBuilder($"{ConstMessage.OutboundTransactionPreview} \n \n مبلغ: {transaction.Amount.Value.ToString("N0").ToPersianNumber()}\n" + 
+            var message = new StringBuilder($"{ConstMessage.OutboundTransactionPreview} \n مبلغ: {transaction.Amount.Value.ToString("N0").ToPersianNumber()}\n" + 
                           $"بابت: {transaction.Description}\n" +
                           $"دسته بندی: {CatName}\n" +
                           $"بانک: {bankName}\n" +

@@ -5,6 +5,7 @@ using Application.Mediator.Transactions.DTOs;
 using Domain.DTOs.Shared;
 using Domain.Entities.Banks;
 using Domain.Entities.Transactions;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,9 @@ namespace Application.Mediator.Transactions.Query
     public class GetOutBoundTransactionTodaySummary : IQuery<ServiceRespnse<GetTodaySummaryDTO>>
     {
         public long TelegramId { get; set; }
-        public DateTime? Date { get; set; }
+        public TransactionType? Type { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
         public class GetOutBoundTransactionTodaySummaryHandler : IQueryHandler<GetOutBoundTransactionTodaySummary, ServiceRespnse<GetTodaySummaryDTO>>
         {
             private readonly IGenericRepository<Transaction> _transactionRepository;
@@ -32,7 +35,14 @@ namespace Application.Mediator.Transactions.Query
             public async Task<ServiceRespnse<GetTodaySummaryDTO>> Handle(GetOutBoundTransactionTodaySummary request, CancellationToken cancellationToken)
             {
                 GetTodaySummaryDTO? result;
-                var repo = _transactionRepository.GetAsNoTrackingQuery().Where(z => z.TelegramId == request.TelegramId && z.Type == Domain.Enums.TransactionType.OutBound && z.CreatedAt.Date == DateTime.Now.Date);
+                var repo = _transactionRepository.GetAsNoTrackingQuery().Where(z => z.TelegramId == request.TelegramId 
+                && (request.Type.HasValue
+                ? z.Type == request.Type.Value 
+                : z.Type == TransactionType.OutBound));
+                if (request.FromDate.HasValue)
+                    repo = repo.Where(z => z.CreatedAt.Date >= request.FromDate.Value.Date);
+                if (request.ToDate.HasValue)
+                    repo = repo.Where(z => z.CreatedAt.Date <= request.ToDate.Value.Date);
                 if (repo is null || repo.Count() is 0)
                     result = new()
                     {

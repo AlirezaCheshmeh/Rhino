@@ -20,6 +20,8 @@ namespace Application.Services.TelegramServices.ConstVariable
         //reports
         public static string ChoosereportType => "<b>نوع گزارش خود را انتخاب کنید</b> 📔";
         public static string InboundChooseReportType => "<b>نوع گزارش دریافتی را انتخاب کنید</b> 📔";
+        public static string InboundChooseReportTimeType => "<b>بازه گزارش دریافتی را انتخاب کنید</b> 📔";
+        public static string OutboundChooseReportTimeType => "<b>بازه گزارش پرداختی را انتخاب کنید</b> 📔";
         public static string OutboundChooseReportType => "<b>نوع گزارش پرداختی را انتخاب کنید</b> 📔";
         public static string InboundReport => "دریافتی";
         public static string OutBoundReport => "پرداختی";
@@ -42,7 +44,7 @@ namespace Application.Services.TelegramServices.ConstVariable
         public static string BackToMenu => "بازگشت به منو 🔙";
         public static string CancelButton => "لغو ❌";
         public static string Submit => "تایید ✅";
-        public static string Menu => "       <b>🚀 حسابدار راینو 🚀</b> \n" + "\n" +
+        public static string Menu => "       <b>🚀 حسابدار راینو 🚀</b> \n" +
                                      " 🔹 گزارش گیری روزانه\n" +
                                      " 🔹 گزارش گیری در بازه مشخص\n" +
                                      " 🔹 یادآوری تاریخ وصول چک\n" +
@@ -51,6 +53,11 @@ namespace Application.Services.TelegramServices.ConstVariable
         public static string BuyAccount => "💰 <b>قیمت های اشتراک راینو به شرح زیر می‌باشد</b> 💰";
         public static string OutboundTransactionPreview => "⚠ تراکنش ایجاد شده شما :";
         public static string Today => "امروز";
+        public static string TransactionList => "لیست تراکنش ها";
+        public static string Summary => "خلاصه";
+        public static string Yesterday => "دیروز";
+        public static string LastWeek => "هفته اخیر";
+        public static string LastMonth => "ماه اخیر";
         public static string TodaySummary => "خلاصه امروز";
         public static string SpecificDate => "تاریخ مشخص";
         public static string Success => "<b>عملیات با موفقیت انجام شد</b> ✏";
@@ -65,7 +72,7 @@ namespace Application.Services.TelegramServices.ConstVariable
         //setting and bank message
         public static string Settings => "<b>تنظیمات مورد نظر خود را انتخاب کنید</b> ⚙";
 
-        public static string InsertNewBank => "<b>نام بانک خود را وارد کنید</b>";
+        public static string InsertNewBank => "<b>نام بانک خود را انتخاب کنید</b>";
 
     }
 }

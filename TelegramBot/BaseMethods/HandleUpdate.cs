@@ -16,25 +16,22 @@ namespace TelegramBot.BaseMethods
     public class HandleUpdate : BaseConfig
     {
         private readonly HandleCallbackQuery _handleCallbackQuery;
-        private readonly ILogger<HandleUpdate> _logger;
         private readonly HandleMessage _handleMessage;
         private readonly ICacheServices _cache;
         private readonly IDistributedCache _disCache;
         private readonly IDynamicButtonsServices _dynamicButtonsServices;
-        public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices, ILogger<HandleUpdate> logger)
+        public HandleUpdate(ICacheServices cache, IDistributedCache disCache, IDynamicButtonsServices dynamicButtonsServices)
         {
             _handleCallbackQuery = new(cache, disCache, dynamicButtonsServices);
             _handleMessage = new(cache, disCache, dynamicButtonsServices);
             _cache = cache;
             _disCache = disCache;
-            _logger = logger;
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient client, Update update, CancellationToken cancellationToken = default)
         {
             UserSession? userSession = null;
             //log 
-            _logger.LogInformation($"has message on update ====> {update.Message}");
             try
             {
                 await client.DeleteWebhookAsync(dropPendingUpdates: true, cancellationToken: cancellationToken);

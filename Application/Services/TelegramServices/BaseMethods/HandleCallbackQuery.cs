@@ -32,6 +32,8 @@ using Application.Cqrs.Queris;
 using Application.Mediator.Transactions.Query;
 using Domain.Entities.Reminders;
 using Microsoft.EntityFrameworkCore;
+using Application.Mediator.Banks.Command;
+using Application.Mediator.Banks.DTOs;
 
 namespace Application.Services.TelegramServices.BaseMethods
 {
@@ -76,14 +78,16 @@ namespace Application.Services.TelegramServices.BaseMethods
             AccountConfigs accountConfig = new(_userPerchaseRepo);
             DateFunctions dateConfig = new(client);
             ReminderConfigs reminderConfig = new(client);
-            ReportConfigs reportConfig = new(client, _queryDispatcher,_disCache,_bankRepo,_categoryRepo);
+            ReportConfigs reportConfig = new(client, _queryDispatcher, _disCache, _bankRepo, _categoryRepo);
             try
             {
                 var userIdKey = callbackQuery.From.Id;
                 if (callbackQuery.Message is null)
                 {
-                    // todo : please show send suitable message for client and write log 
-                    return;
+                    var ErrorMessage = await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id);
+                    userSession.MessageIds.Add(ErrorMessage.MessageId);
+                    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                    await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                 }
 
                 if (userSession.CommandState is not CommandState.Init)
@@ -91,38 +95,136 @@ namespace Application.Services.TelegramServices.BaseMethods
                     userSession.MessageIds.Add(callbackQuery.Message.MessageId);
                     await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                 }
+                //insert bank
+                if (callbackQuery.Data.StartsWith("insertbank_"))
+                {
+                    var bankName =settingMenu.GetPersianBankName(callbackQuery.Data.Split('_')[1]);
+                    //insert to db
+                    var mappedBank = _mapper.Map<BankDTO>(new Bank
+                    {
+                        Branch = "",
+                        Name = bankName,
+                        SVG = "",
+                        TelegramId = userIdKey
+                    });
+                    var resultBank = await _commandDispatcher.SendAsync(new InsertBankCommand { dto = mappedBank }, cancellationToken: default);
+                    if (resultBank.IsSuccess)
+                    {
+                        var BankInsertedMessage = await client
+                           .SendTextMessageAsync(callbackQuery.Message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);
+                        userSession.MessageIds.Add(BankInsertedMessage.MessageId);
+                        Task.Delay(250).Wait();
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
+                    }
+                    else
+                    {
+                        var ErrorMessage = await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id);
+                        userSession.MessageIds.Add(ErrorMessage.MessageId);
+                        await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                        await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
+                    }
+                }
                 //handle reminder
                 if (callbackQuery.Data.StartsWith("remindmeagain-"))
                 {
                     var reminderId = long.Parse(callbackQuery.Data.Split('-')[1]);
                     var reminder = await _reminderRepository.GetQuery().Where(z => z.Id == reminderId).FirstOrDefaultAsync();
                     reminder.IsExpire = false;
-                    await _reminderRepository.UpdateAsync(reminder,cancellationToken:default);
-                    var message =  await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "✔️ <b>متوجه شدم، مجدد یادآوری میکنم</b>", parseMode:ParseMode.Html);
-                    var reminderMessageId = await CacheExtension.GetValueAsync<int>(userIdKey+ConstKey.ReminderMessageId);
+                    await _reminderRepository.UpdateAsync(reminder, cancellationToken: default);
+                    var message = await client.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "✔️ <b>متوجه شدم، مجدد یادآوری میکنم</b>", parseMode: ParseMode.Html);
+                    var reminderMessageId = await CacheExtension.GetValueAsync<int>(userIdKey + ConstKey.ReminderMessageId);
                     await Task.Delay(500);
-                    await client.DeleteMessageAsync(callbackQuery.Message.Chat.Id,message.MessageId);
-                    await client.DeleteMessageAsync(callbackQuery.Message.Chat.Id,reminderMessageId);
-                    await menu.RollBackToMenu(userIdKey,callbackQuery.Message.Chat.Id,userSession);
+                    await client.DeleteMessageAsync(callbackQuery.Message.Chat.Id, message.MessageId);
+                    await client.DeleteMessageAsync(callbackQuery.Message.Chat.Id, reminderMessageId);
+                    await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                 }
                 //handle pagination
                 //outbound
                 if (callbackQuery.Data.StartsWith("outboundpage_"))
                 {
                     var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
-                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.Date, ToDate = DateTime.Now.Date, TelegramId = userIdKey,Type = TransactionType.OutBound});
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.Date, ToDate = DateTime.Now.Date, TelegramId = userIdKey, Type = TransactionType.OutBound });
                     var transactions = data.Data;
                     var pagination = await reportConfig.GenerateOutBoundPagination(transactions, pageNumber, data.TotalCount.Value);
 
-                   var res1 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های پرداختی امروز</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
-                   userSession.MessageIds.Add(res1.MessageId);
+                    var res1 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های پرداختی امروز</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    userSession.MessageIds.Add(res1.MessageId);
+                    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                }//lastweek
+                if (callbackQuery.Data.StartsWith("outboundlastweekpage_"))
+                {
+                    var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.AddDays(-7).Date, TelegramId = userIdKey, Type = TransactionType.OutBound });
+                    var transactions = data.Data;
+                    var pagination = await reportConfig.GenerateOutBoundLastWeekPagination(transactions, pageNumber, data.TotalCount.Value);
+
+                    var res1 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های پرداختی در هفته اخیر</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    userSession.MessageIds.Add(res1.MessageId);
+                    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                }//yesterday
+                if (callbackQuery.Data.StartsWith("outboundyesterdaypage_"))
+                {
+                    var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.AddDays(-1).Date, ToDate = DateTime.Now.AddDays(-1).Date, TelegramId = userIdKey, Type = TransactionType.OutBound });
+                    var transactions = data.Data;
+                    var pagination = await reportConfig.GenerateYesterdayOutBoundPagination(transactions, pageNumber, data.TotalCount.Value);
+
+                    var res3 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های پرداختی دیروز</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    userSession.MessageIds.Add(res3.MessageId);
+                    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                }//inbound lastweek
+                if (callbackQuery.Data.StartsWith("inboundlastweekpage_"))
+                {
+                    var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.AddDays(-7).Date, TelegramId = userIdKey, Type = TransactionType.InBound });
+                    var transactions = data.Data;
+                    var pagination = await reportConfig.GenerateInBoundLastWeekPagination(transactions, pageNumber, data.TotalCount.Value);
+
+                    var res3 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های دریافتی در هفته اخیر</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    userSession.MessageIds.Add(res3.MessageId);
+                    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                }//inbound yesterday
+                if (callbackQuery.Data.StartsWith("inboundyesterdaypage_"))
+                {
+                    var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.AddDays(-1).Date, ToDate = DateTime.Now.AddDays(-1).Date, TelegramId = userIdKey, Type = TransactionType.OutBound });
+                    var transactions = data.Data;
+                    var pagination = await reportConfig.GenerateInBoundYesterdayPagination(transactions, pageNumber, data.TotalCount.Value);
+
+                    var res2 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های پرداختی دیروز</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    userSession.MessageIds.Add(res2.MessageId);
+                    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                }
+                //inbound last month
+                if (callbackQuery.Data.StartsWith("inboundlastmonthpage_"))
+                {
+                    var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.AddDays(-30).Date, TelegramId = userIdKey, Type = TransactionType.InBound });
+                    var transactions = data.Data;
+                    var pagination = await reportConfig.GenerateInBoundLastMonthPagination(transactions, pageNumber, data.TotalCount.Value);
+
+                    var res2 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های دریافتی در ماه اخیر</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    userSession.MessageIds.Add(res2.MessageId);
+                    await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
+                }
+                //outbound lastmonth
+                if (callbackQuery.Data.StartsWith("outboundlastmonthpage_"))
+                {
+                    var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.AddDays(-30).Date, TelegramId = userIdKey, Type = TransactionType.OutBound });
+                    var transactions = data.Data;
+                    var pagination = await reportConfig.GenerateOutBoundLastMonthPagination(transactions, pageNumber, data.TotalCount.Value);
+
+                    var res2 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های پرداختی در ماه اخیر</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    userSession.MessageIds.Add(res2.MessageId);
                     await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                 }
                 //inbound
                 if (callbackQuery.Data.StartsWith("inboundpage_"))
                 {
                     var pageNumber = int.Parse(callbackQuery.Data.Split('_')[1]);
-                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.Date, ToDate = DateTime.Now.Date, TelegramId = userIdKey ,Type = TransactionType.InBound});
+                    var data = await _queryDispatcher.SendAsync(new GetAllTransactionsQuery { Count = 5, PageNumber = pageNumber, FromDate = DateTime.Now.Date, ToDate = DateTime.Now.Date, TelegramId = userIdKey, Type = TransactionType.InBound });
                     var transactions = data.Data;
                     var pagination = await reportConfig.GenerateInBoundPagination(transactions, pageNumber, data.TotalCount.Value);
                     var globalbuttons = new List<InlineKeyboardButton>();
@@ -142,7 +244,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                 if (callbackQuery.Data.StartsWith("inboundtransaction_"))
                 {
                     var inId = long.Parse(callbackQuery.Data.Split('_')[1]);
-                    var inboundTransactionDetail = await _queryDispatcher.SendAsync(new GetTransactionByIdQuery {Id = inId });
+                    var inboundTransactionDetail = await _queryDispatcher.SendAsync(new GetTransactionByIdQuery { Id = inId });
                     await reportConfig.SendInboundTransactionDetail(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, inboundTransactionDetail.Data);
                 }
                 //outbound
@@ -452,18 +554,11 @@ namespace Application.Services.TelegramServices.BaseMethods
                         userSession.MessageIds.Add(callbackQuery.Message.MessageId);
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                         break;
-
                     #endregion
 
                     #region InsertNewBank
                     case CommandState.InsertNewbank:
-                        var inlineKeyboardInsertBank = new InlineKeyboardMarkup(new[]
-                        {
-                            new[] {InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) },
-                        });
-                        var bankMessage = await client
-                            .SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: ConstMessage.InsertNewBank, parseMode: ParseMode.Html, replyMarkup: inlineKeyboardInsertBank);
-                        //add message id for delete rollback
+                        var bankMessage = await settingMenu.SendChooseBankForInsertBankInSetting(callbackQuery.Message.Chat.Id);
                         userSession.MessageIds.Add(callbackQuery.Message.MessageId);
                         userSession.MessageIds.Add(bankMessage.MessageId);
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
@@ -492,39 +587,160 @@ namespace Application.Services.TelegramServices.BaseMethods
 
                     #region InboundReports
                     case CommandState.InboundReport:
-                        await reportConfig.SendChooseTypeInboundReport(callbackQuery.Message.Chat.Id);
+                        await reportConfig.SendChooseTimeTypeInboundReport(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId);
+                        break;
+                    #endregion
+
+                    #region InboundTodayReportsDynamicType
+                    case CommandState.InboundTodayReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.InboundToday);
+                        break;
+                    #endregion
+
+                    #region InboundYesterdayReportsDynamicType
+                    case CommandState.InboundYesterdayReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.InboundYesterday);
+                        break;
+                    #endregion
+
+                    #region InboundYesterdaySummaryReport
+                    case CommandState.InboundYesterdaySummary:
+                        await reportConfig.SendInboundYesterdaySummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
+                        break;
+                    #endregion
+
+                    #region InboundLastWeekReportsDynamicType
+                    case CommandState.InboundLastWeekReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.InboundLastWeek);
+                        break;
+                    #endregion
+
+                    #region InboundLastWeekReports
+                    case CommandState.InboundLastWeekReport:
+                        await reportConfig.SendInboundLastWeek(callbackQuery.Message.Chat.Id, userIdKey, callbackQuery.Message.MessageId, userSession);
+                        break;
+                    #endregion
+
+                    #region OutboundLastWeekReports
+                    case CommandState.OutboundLastWeekReport:
+                        await reportConfig.SendOutboundLastWeek(callbackQuery.Message.Chat.Id, userIdKey, callbackQuery.Message.MessageId, userSession);
+                        break;
+                    #endregion
+
+                    #region InboundLastWeekSummaryReports
+                    case CommandState.InboundLastWeekSummaryReport:
+                        await reportConfig.SendInboundlastWeekSummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
+                        break;
+                    #endregion
+
+                    #region OutboundLastWeekSummaryReports
+                    case CommandState.OutboundLastWeekSummaryReport:
+                        await reportConfig.SendOutboundlastWeekSummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
+                        break;
+                    #endregion
+
+                    #region InboundLastMonthReportsDynamicType
+                    case CommandState.InboundLastMonthReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.InboundLastMonth);
+                        break;
+                    #endregion
+
+                    #region InboundLastMonthSummaryReport
+                    case CommandState.InboundLastMonthSummaryReport:
+                        await reportConfig.SendInboundlastMonthSummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
+                        break;
+                    #endregion
+
+                    #region OutboundLastMonthSummaryReport
+                    case CommandState.OutboundLastMonthSummaryReport:
+                        await reportConfig.SendOutboundlastMonthSummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
+                        break;
+                    #endregion
+
+                    #region OutboundLastMonthReport
+                    case CommandState.OutboundLastMonthReport:
+                        await reportConfig.SendOutboundLastMonth(callbackQuery.Message.Chat.Id, userIdKey, callbackQuery.Message.MessageId, userSession);
+                        break;
+                    #endregion
+
+                    #region InboundLastMonthReport
+                    case CommandState.InboundLastMonthReport:
+                        await reportConfig.SendInboundLastMonth(callbackQuery.Message.Chat.Id, userIdKey, callbackQuery.Message.MessageId, userSession);
                         break;
                     #endregion
 
                     #region OutboundReports
                     case CommandState.OutboundReport:
-                        await reportConfig.SendChooseTypeOutboundReport(callbackQuery.Message.Chat.Id);
+                        await reportConfig.SendChooseTimeTypeOutboundReport(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId);
+                        break;
+                    #endregion
+
+                    #region OutboundTodayReportsDynamicType
+                    case CommandState.OutboundTodayReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.OutboundToday);
+                        break;
+                    #endregion
+
+                    #region OutboundYesterdayReportsDynamicType
+                    case CommandState.OutboundYesterdayReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.OutboundYesterday);
+                        break;
+                    #endregion
+
+                    #region OutboundYesterdayReport
+                    case CommandState.OutboundYesterdayReport:
+                        await reportConfig.SendOutboundYesterday(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey, userSession);
+                        break;
+                    #endregion
+
+                    #region OutboundLastWeekReportsDynamicType
+                    case CommandState.OutboundLastWeekReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.OutboundLastWeek);
+                        break;
+                    #endregion
+
+                    #region OutboundLastMonthReportsDynamicType
+                    case CommandState.OutboundLastMonthReportsDynamicType:
+                        await reportConfig.SendDynamicReportType(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, DynamicReportType.OutboundLastMonth);
                         break;
                     #endregion
 
                     #region OutboundTodayReport
                     case CommandState.OutboundTodayReport:
-                        await reportConfig.SendOutboundToday(callbackQuery.Message.Chat.Id,userIdKey,userSession);
+                        await reportConfig.SendOutboundToday(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey, userSession);
                         break;
 
                     #endregion
 
                     #region InboundTodayReport
                     case CommandState.InboundTodayReport:
-                        await reportConfig.SendInboundToday(callbackQuery.Message.Chat.Id, userIdKey, userSession);
+                        await reportConfig.SendInboundToday(callbackQuery.Message.Chat.Id, userIdKey, callbackQuery.Message.MessageId, userSession);
                         break;
 
                     #endregion
 
-                    #region OutboundTodaySummaryReports
+                    #region InboundYesterdayReportOu
+                    case CommandState.InboundYesterdayReport:
+                        await reportConfig.SendInboundYesterday(callbackQuery.Message.Chat.Id, userIdKey, callbackQuery.Message.MessageId, userSession);
+                        break;
+
+                    #endregion
+
+                    #region OutboundTodaySummaryReport
                     case CommandState.OutboundSummary:
-                        await reportConfig.SendOutboundTodaySummary(callbackQuery.Message.Chat.Id, userIdKey);
+                        await reportConfig.SendOutboundTodaySummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
+                        break;
+                    #endregion
+
+                    #region OutboundYesterdaySummaryReport
+                    case CommandState.OutboundYesterdaySummaryReport:
+                        await reportConfig.SendOutboundYesterdaySummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
                         break;
                     #endregion
 
                     #region InBoundTodaySummaryReports
                     case CommandState.InboundSummary:
-                        await reportConfig.SendInboundTodaySummary(callbackQuery.Message.Chat.Id, userIdKey);
+                        await reportConfig.SendInboundTodaySummary(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, userIdKey);
                         break;
                     #endregion
 
@@ -543,7 +759,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                         }
                         break;
                     #endregion
-                   
+
                     #region ChooseDayReminder
                     case CommandState.ChooseDayReminder:
                         var rmeinderDateMonth = Convert.ToInt64(callbackQuery.Data?.Split("-").LastOrDefault());//get month here

@@ -139,7 +139,7 @@ namespace Application.Services.TelegramServices.Configurations
 
         public async Task SendReminderPreviewAsync(long chatId, ReminderDto reminder)
         {
-            var message = "⚠ یادآوری ایجاد شده شما: \n " + "\n" +
+            var message = "⚠ یادآوری ایجاد شده شما: \n " +
                 $"تاریخ : {DateExtension.ConvertToPersianDate(reminder.RemindDate.ToString("yyy/MM/dd"))}  \n" +
                 $"مبلغ : {reminder.Amount.ToString("N0").ToPersianNumber()} \n" +
                 $"بابت : {reminder.Description} \n";
