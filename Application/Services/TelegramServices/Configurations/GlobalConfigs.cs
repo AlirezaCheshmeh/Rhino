@@ -23,9 +23,10 @@ namespace Application.Services.TelegramServices.Configurations
 
 
         //errors
-        public async Task<Message> SendErrorToUser(long chatId)
+        public async Task<Message> SendErrorToUser(long chatId, string? customMessage = null)
         {
-            return await _client.SendTextMessageAsync(chatId, ConstMessage.Error, parseMode: ParseMode.Html);
+            var errorMessage = string.IsNullOrEmpty(customMessage) ? ConstMessage.Error : customMessage;
+            return await _client.SendTextMessageAsync(chatId, errorMessage, parseMode: ParseMode.Html);
         }
 
 

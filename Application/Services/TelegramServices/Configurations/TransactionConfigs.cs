@@ -88,7 +88,6 @@ namespace Application.Services.TelegramServices.Configurations
             {
                 InlineKeyboardButton.WithCallbackData(ConstMessage.Back, ConstCallBackData.Global.Back) ,
                 InlineKeyboardButton.WithCallbackData(ConstMessage.CancelButton, ConstCallBackData.OutboundTransactionPreview.Cancel) ,
-
             });
             var inlineKeyboards = new InlineKeyboardMarkup(bankInlineKeyboardButtons);
             await _client.SendTextMessageAsync(

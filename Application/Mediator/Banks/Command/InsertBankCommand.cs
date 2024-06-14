@@ -29,7 +29,9 @@ namespace Application.Mediator.Banks.Command
 
             public async Task<ServiceRespnse> Handle(InsertBankCommand request, CancellationToken cancellationToken)
             {
-                var exist = await _bankRepository.GetAsNoTrackingQuery().AnyAsync(z => z.Name == request.dto.Name && z.Branch == request.dto.Branch);
+                var exist = await _bankRepository
+                    .GetAsNoTrackingQuery()
+                    .AnyAsync(z =>z.TelegramId == request.dto.TelegramId && z.Name == request.dto.Name && z.Branch == request.dto.Branch, cancellationToken: cancellationToken);
                 Hashtable errors = new();
 
                 if (exist)

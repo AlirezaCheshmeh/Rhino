@@ -38,6 +38,7 @@ namespace Application.Services.TelegramServices.ConstVariable
 
         //errors
         public static string Error => "<b>خطایی رخ داده است دوباره تلاش کنبد</b> ⚠";
+        public static string ExistBank => "⚠ قبلا برای شما ثبت شده است ";
 
         //menu and global
         public static string Back => "بازگشت 🔙";

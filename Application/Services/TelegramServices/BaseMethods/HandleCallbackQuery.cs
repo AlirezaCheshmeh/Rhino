@@ -110,17 +110,18 @@ namespace Application.Services.TelegramServices.BaseMethods
                     var resultBank = await _commandDispatcher.SendAsync(new InsertBankCommand { dto = mappedBank }, cancellationToken: default);
                     if (resultBank.IsSuccess)
                     {
-                        var BankInsertedMessage = await client
+                        var bankInsertedMessage = await client
                            .SendTextMessageAsync(callbackQuery.Message.Chat.Id, ConstMessage.Success, parseMode: ParseMode.Html);
-                        userSession.MessageIds.Add(BankInsertedMessage.MessageId);
+                        userSession.MessageIds.Add(bankInsertedMessage.MessageId);
                         Task.Delay(250).Wait();
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                         await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                     }
                     else
                     {
-                        var ErrorMessage = await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id);
-                        userSession.MessageIds.Add(ErrorMessage.MessageId);
+                        var errorMessage = $"بانک {bankName} {ConstMessage.ExistBank}";
+                        var sendErrorResponse = await globalMessage.SendErrorToUser(callbackQuery.Message.Chat.Id, errorMessage);
+                        userSession.MessageIds.Add(sendErrorResponse.MessageId);
                         await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                         await menu.RollBackToMenu(userIdKey, callbackQuery.Message.Chat.Id, userSession);
                     }
