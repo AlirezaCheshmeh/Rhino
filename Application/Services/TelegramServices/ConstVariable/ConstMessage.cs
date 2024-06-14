@@ -27,10 +27,10 @@ namespace Application.Services.TelegramServices.ConstVariable
         public static string OutBoundReport => "پرداختی";
 
         //transaction
-        public static string InsertAmount => "💰 <b>لطفا مبلغ پرداختی را وارد کنید</b> 💰 ";
-        public static string InsertDescription => "<b>لطفا بابت پراختی را واردکنید</b> 📔";
-        public static string OutBoundInsertAmount => "💰 <b>لطفا مبلغ دریافتی را وارد کنید</b> 💰 ";
-        public static string OutBoundInsertDescription => "<b>لطفا بابت دریافتی را واردکنید</b> 📔";
+        public static string InsertAmount => "💰 <b>لطفا مبلغ دریافتی را وارد کنید</b> 💰 ";
+        public static string InsertDescription => "<b>لطفا بابت دریافتی را واردکنید</b> 📔";
+        public static string OutBoundInsertAmount => "💰 <b>لطفا مبلغ پراختی را وارد کنید</b> 💰 ";
+        public static string OutBoundInsertDescription => "<b>لطفا بابت پراختی را واردکنید</b> 📔";
         public static string ChooseCategory => "<b>دسته بندی مورد نظر را انتخاب کنید</b> 📔";
         public static string ChooseBank => "<b>بانک خود را انتخاب کنید</b> 🏧";
         public static string OutboundTransactionType => "<b>پرداخت را در چه تاریخی انجام داده اید</b> ⏳";
