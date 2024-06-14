@@ -192,7 +192,7 @@ namespace Application.Services.TelegramServices.BaseMethods
                     var transactions = data.Data;
                     var pagination = await reportConfig.GenerateInBoundYesterdayPagination(transactions, pageNumber, data.TotalCount.Value);
 
-                    var res2 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های پرداختی دیروز</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
+                    var res2 = await client.EditMessageTextAsync(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, $"💸 <b>تراکنش‌های دریافتی دیروز</b> \n  📉 <b>تعداد کل:{data.TotalCount.ToString().ToPersianNumber()}</b>  \n  📝 <b>شماره صفحه:{pageNumber.ToString().ToPersianNumber()}</b>\n💰 <b>مجموع:{data.TotalAmount} تومان</b>", parseMode: Telegram.Bot.Types.Enums.ParseMode.Html, replyMarkup: pagination);
                     userSession.MessageIds.Add(res2.MessageId);
                     await CacheExtension.UpdateValueAsync(userIdKey + ConstKey.Session, userSession);
                 }
