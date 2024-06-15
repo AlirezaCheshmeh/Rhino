@@ -30,13 +30,13 @@ builder.Services.AddCors(options => options.AddPolicy("myPol", builder =>
 }));
 
 //add seq logg
-//builder.Host.UseSerilog(SerilogConfig.ConfigureLogger); => use for seq
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .WriteTo.Console()
-    .WriteTo.File("Applogs/myBeautifulLog-.text", rollingInterval: RollingInterval.Day)
-    .CreateLogger();//use for file
-builder.Host.UseSerilog();
+builder.Host.UseSerilog(SerilogConfig.ConfigureLogger);
+//Log.Logger = new LoggerConfiguration()
+//    .MinimumLevel.Information()
+//    .WriteTo.Console()
+//    .WriteTo.File("Applogs/myBeautifulLog-.text", rollingInterval: RollingInterval.Day)
+//    .CreateLogger();//use for file
+//builder.Host.UseSerilog();
 
 //Add Services Related To Persistence Infrastructure layer
 builder.Services.AddPersistanceInfrestructurelayarServcies(builder.Configuration);
